@@ -1,18 +1,19 @@
-%Using the lego mindstorms with the block EV3
-%This example is based in the toolbox
+% Using the lego mindstorms with the block EV3
+% This example is based on the toolbox
 % https://wiki.qut.edu.au/display/cyphy/QUT+EV3+MATLAB+toolkit
 % and its documentation
-
-%The robot consists in two Continuous tracks (Right and Left) connected to
-%the ports B and C respectively
-
+%
+% The robot consists in two Continuous tracks (Right and Left) connected to
+% the ports B and C respectively
+%
 %Raymundo Cassani
 %Sept 2014
 
 %% Connecting the Brick using USB and bluetooth 
-% Initialization of connection is slower using BT but more responsive
+% Initialization of connection is slower using BT
 % Use preferently BT 
-% When connected, a Beep is produced
+% When connected, the EV3 emits a beep
+
 clear all;
 close all;
 
@@ -32,20 +33,21 @@ try
 catch
 end
 
-% Contrilling motors
+% Setting both motor powers 
 pause(1);
 motorPowerB = 0;
 motorPowerC = 0;
-%Note that 50 is 50% forward and -50 is %50 backward 
 
-%Start the motors with zero power
+% Note that 50 is 50% forward and -50 is %50 backward 
+% Start the motors with zero power
 b.outputStart(0,Device.MotorB);
 pause(0.01);
 b.outputStart(0,Device.MotorC);
 
-
 disp('%%%%%%%%%%%%%%%%')
 
+% Creation of the TCP/IP client, which receives the intrustions for the
+% motors
 ev3Client=tcpip('localhost', 33000, 'NetworkRole', 'client');
 ev3Client.InputBufferSize = 5000;
 ev3Client.Timeout = 600;
@@ -72,7 +74,9 @@ while true
         
 end 
 
-%Remember to destroy the Brick
+% Destroys the Brick object 
 b.delete
+
+% Closes ths TCP/IP connection
 fclose(ev3Client);
 

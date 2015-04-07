@@ -37,12 +37,12 @@ btChannel = 3;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Name of Players
-player1Name = 'Ana';
-player2Name = 'Wil';
+player1Name = '';
+player2Name = 'Hub';
 player1Port = 33001;
 player2Port = 33002;
 
-% Verify names
+%Check names
 if isempty(player1Name) || isempty(player2Name)
     if isempty(player1Name)
         player1Name = 'PC1';
@@ -52,28 +52,26 @@ if isempty(player1Name) || isempty(player2Name)
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%% === Configuration of Game Mechanics ===       %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Game Mechanics
-trainDuration  = 15;  %Duration of each training section
-windowDuration = 2;  %Duration of the test window to extract features
-testOverlap    = 1;    %Overlap for the windows
-
-% General Variables
-command = 'x';
+% Player Flags
 bolPlayer1 = true;
 bolPlayer2 = true;
+
+
+
+%General Variables
+command = 'x';
+
+%Game Mechanics
+trainDuration = 15;  %Duration of each training section
+windowDuration = 2;    %Duration of the test window to extract features
+testOverlap  = 1;    %Overlap for the windows
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%            === Connections Init ===           %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Adds the current path to Matlab Path
+%General Path to all the other scripts and
 folder = [pwd '\'];
 matlabExePath = ' "C:\Program Files\MATLAB\R2013a\bin\matlab.exe" ';
 disp('###### Neural Drift #######')
