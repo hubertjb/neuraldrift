@@ -1,5 +1,5 @@
 function PlayerFunct(port2boss, port2acq, playerName, trainDuration, windowDuration, testOverlap)
-
+%%% %%% %%% 
 %Begining
 
 % Find the player number
