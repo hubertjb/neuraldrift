@@ -90,7 +90,7 @@ end
 state = 'NA';
 
 % Audio cue
-audiofilename = 'beep.mp3';
+audiofilename = 'beep.wav';
 [y, sampF] = audioread(audiofilename);
 sound(y,sampF);
 
@@ -192,7 +192,9 @@ while true %Main loop, it is controlled by the TCP/IP packages rate
                 train0 = trainEEG;
                 trainEEG(:) = NaN;
                 %state = 'acqTrain1';
-                sound(y,sampF); %beep
+                
+                
+                tone(800,100); %beep
                 
                 size(train0)
                 
@@ -204,7 +206,7 @@ while true %Main loop, it is controlled by the TCP/IP packages rate
                 train1 = trainEEG;
                 trainEEG(:) = NaN;
                 %state = 'trainClassifier';
-                sound(y,sampF); %beep
+                tone(800,100); %beep
                 
         end %switch for training examples
     end %if first row is NaN
@@ -337,7 +339,7 @@ while true %Main loop, it is controlled by the TCP/IP packages rate
             
             testEEG(:) = NaN;
             %state = 'startClassification';
-            sound(y,sampF); sound(y,sampF); %beep
+            tone(500,50); tone(500,50); %beep
             
             disp('Training Done !');
             %Don't tell Boss now, wait after Training. (since not long)
@@ -406,7 +408,7 @@ bPress = 0;
 %     bPress = waitforbuttonpress;
 % end
 
-sound(y,sampF); %beep
+tone(500,1000); %beep
 fclose(eegServer);
 delay_ms(500);
 fclose(playerClient);
