@@ -5,4 +5,3 @@ if strcmp(method,'LR')
 elseif strcmp(method,'SVM')
     yEval = svmclassify(modelParams, electUsed);
 end
-

@@ -21,7 +21,7 @@ thresholdedR = abs(r);
 thresholdedR(p>=0.05) = 0;
 thresholdedR(isnan(thresholdedR)) = 0;
 
-%% Select the 5 best features with (p<0.05)
+%% Select the best features with (p<0.05)
 
 [~,I] = sort(thresholdedR, 'descend');
 

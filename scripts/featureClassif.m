@@ -1,4 +1,4 @@
-function [params, trainingAcc] = featureClassif(featureUsed0, featureUsed1, method)
+function [params, trainingAcc] = trainClassifier(featureUsed0, featureUsed1, method)
 
 
 n0 = length(featureUsed0);
@@ -17,7 +17,7 @@ if strcmp(method,'LR')
     disp(['Train accuracy: ', num2str(acc_lr.CorrectRate*100), '%']);
     trainingAcc = acc_lr.CorrectRate*100;
 elseif strcmp(method,'SVM')
-    params = svmtrain(X, y, 'kernel_function', 'linear');
+    params = svmtrain(X, y, 'kernel_function', 'rbf');
     yhat_svm = svmclassify(params, X);
     acc_svm = classperf(y, yhat_svm);
     disp(['Train accuracy: ', num2str(acc_svm.CorrectRate*100), '%']);
