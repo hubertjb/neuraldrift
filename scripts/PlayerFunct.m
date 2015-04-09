@@ -171,7 +171,7 @@ fclose(playerClient);
 disp(['Done with Player ',num2str(playerNb)]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%              Auxiliar Functions               %%%%%%%%
+%%%%%%%%              Auxiliary Functions              %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     function flushMules()
