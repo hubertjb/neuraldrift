@@ -16,7 +16,7 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % EV3 Robot, Bluetooth
-bolRobot = true;
+bolRobot = false;
 
 % Android App, Bluetooth
 bolTablet = true;
@@ -28,7 +28,6 @@ btChannel = 3;
 %btChannel = 0
 % Matlab will search for the correct channel, however the connection will 
 % take longer
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,8 +72,14 @@ bolPlayer2 = true;
 %%%%%%%%            === Connections Init ===           %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Adds the current path to Matlab Path
+
+% Adds the parent directory to the Matlab Path
 folder = [pwd '\'];
+cd('..\');
+addpath(genpath(pwd));
+cd(folder);
+
+% Matlab execccutable path
 matlabExePath = ' "C:\Program Files\MATLAB\R2013a\bin\matlab.exe" ';
 disp('###### Neural Drift #######')
 
@@ -154,7 +159,7 @@ if bolPlayer1
         num2str(windowDuration) ',' num2str(testOverlap)]  ')''); exit();"']);
     
     %Check for device number and start the acquisition with that
-    system( [folder '\EEG_Acquisition1\eegacq.exe &']);
+    %system( [folder '\EEG_Acquisition1\eegacq.exe &']);
     
     %fopen waits for the client connection.
     fopen(player1Server);
@@ -177,7 +182,7 @@ if bolPlayer2
         num2str(windowDuration) ',' num2str(testOverlap)]  ')''); exit();"']);
     
     %Check for device number and start the acquisition with that
-    system( [folder '\EEG_Acquisition2\eegacq.exe &']);
+    %system( [folder '\EEG_Acquisition2\eegacq.exe &']);
     
     %fopen waits for the client connection.
     fopen(player2Server);
