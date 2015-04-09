@@ -1,3 +1,5 @@
+function Boss()
+
 % Description of Boss Script
 
 % Begining
@@ -16,7 +18,7 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % EV3 Robot, Bluetooth
-bolRobot = true;
+bolRobot = false;
 
 % Android App, Bluetooth
 bolTablet = true;
@@ -28,7 +30,6 @@ btChannel = 3;
 %btChannel = 0
 % Matlab will search for the correct channel, however the connection will 
 % take longer
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,10 +74,17 @@ bolPlayer2 = true;
 %%%%%%%%            === Connections Init ===           %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Adds the current path to Matlab Path
+
+% Adds the parent directory to the Matlab Path
 folder = [pwd '\'];
+cd('..\');
+addpath(genpath(pwd));
+cd(folder);
+
+% Matlab executable path
 matlabExePath = ' "C:\Program Files\MATLAB\R2013a\bin\matlab.exe" ';
 disp('###### Neural Drift #######')
+disp('');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%              Connection with EV3              %%%%%%%%
@@ -126,11 +134,10 @@ if bolTablet
         %tabletServer.BytesAvailable
     end
     
-    %Welcoming string from the Table, this string is used to check that
+    %Welcoming string from the Tablet, this string is used to check that
     %the bluettoth connection is working properly
     disp(char(dataRx));
 end
-
 
 %Start sound
 filename = 'deep_bass.wav';
@@ -154,7 +161,7 @@ if bolPlayer1
         num2str(windowDuration) ',' num2str(testOverlap)]  ')''); exit();"']);
     
     %Check for device number and start the acquisition with that
-    system( [folder '\EEG_Acquisition1\eegacq.exe &']);
+    %system( [folder '\EEG_Acquisition1\eegacq.exe &']);
     
     %fopen waits for the client connection.
     fopen(player1Server);
@@ -177,7 +184,7 @@ if bolPlayer2
         num2str(windowDuration) ',' num2str(testOverlap)]  ')''); exit();"']);
     
     %Check for device number and start the acquisition with that
-    system( [folder '\EEG_Acquisition2\eegacq.exe &']);
+    %system( [folder '\EEG_Acquisition2\eegacq.exe &']);
     
     %fopen waits for the client connection.
     fopen(player2Server);
@@ -211,12 +218,8 @@ while true %MegaLoop While
     if bolTablet
         fwrite(tabletServer, 204, 'uint8'); %CC in hex
     end
-    if bolPlayer1
-        fwrite(player1Server, 'A');
-    end
-    if bolPlayer2
-        fwrite(player2Server, 'A');
-    end
+    
+    sendCommandPlayers('A');
     
     %This sound indicates that the Phase 1 is initiated
     filename = 'initiating.mp3';
@@ -224,27 +227,8 @@ while true %MegaLoop While
     sound(y,Fs/1.1);
     
     % Waiting for 2 Players to finish the Handshake.
-    serversState = zeros(2,1);
-    while min(serversState) == 0
-        delay_ms(100);
-        if bolPlayer1
-            if player1Server.BytesAvailable > 0
-                player1Data = fread(player1Server, player1Server.BytesAvailable);
-                serversState(1) = 1; % Player 1 has finished Handshake Phase 1
-            end
-        else
-            serversState(1) = 1; % Player 1 has finished Handshake Phase 1 (No Player 1)
-        end
-        if bolPlayer2
-            if player2Server.BytesAvailable > 0
-                player2Data = fread(player2Server, player2Server.BytesAvailable);
-                serversState(2) = 1; % Player 2 has finished Handshake Phase 1
-            end
-        else
-            serversState(2) = 1; % Player 2 has finished Handshake Phase 1 (No Player 2)
-        end
-        % TODO : Validate playerData, not just any data.
-    end
+    waitTwoPlayers();
+
     disp('Handshake Phase 1 Done !')
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%                    Phase 2                    %%%%%%%%
@@ -256,36 +240,10 @@ while true %MegaLoop While
     if bolTablet
         fwrite(tabletServer, 221, 'uint8'); %DD in hex
     end
-    if bolPlayer1
-        fwrite(player1Server, 'B');
-    end
-    if bolPlayer2
-        fwrite(player2Server, 'B');
-    end
+    sendCommandPlayers('B');
     
     % Waiting for 2 Players to finish the Handshake.
-    serversState = zeros(2,1);
-    while min(serversState) == 0
-        delay_ms(100);
-        
-        if bolPlayer1
-            if player1Server.BytesAvailable > 0
-                player1Data = fread(player1Server, player1Server.BytesAvailable);
-                serversState(1) = 1; % Player 1 has finished Handshake Phase 2
-            end
-        else
-            serversState(1) = 1; % Player 1 has finished Handshake Phase 2 (No Player 1)
-        end
-        if bolPlayer2
-            if player2Server.BytesAvailable > 0
-                player2Data = fread(player2Server, player2Server.BytesAvailable);
-                serversState(2) = 1; % Player 2 has finished Handshake Phase 2
-            end
-        else
-            serversState(2) = 1; % Player 2 has finished Handshake Phase 2 (No Player 2)
-        end
-        % TODO : Validate playerData, not just any data.
-    end
+    waitTwoPlayers()
     
     %Calibration Done !
     disp('Handshake Phase 2 Done !')
@@ -301,35 +259,10 @@ while true %MegaLoop While
     if bolTablet
         fwrite(tabletServer, 238, 'uint8'); %EE in hex
     end
-    if bolPlayer1
-        fwrite(player1Server, 'C');
-    end
-    if bolPlayer2
-        fwrite(player2Server, 'C');
-    end
+    sendCommandPlayers('C');
     
-    % Waiting for 2 Players to finish the Handshake Training.
-    serversState = zeros(2,1);
-    while min(serversState) == 0
-        delay_ms(100);
-        if bolPlayer1
-            if player1Server.BytesAvailable > 0
-                player1Data = fread(player1Server, player1Server.BytesAvailable);
-                serversState(1) = 1; % Player 1 has  Handshake Phase 1
-            end
-        else
-            serversState(1) = 1; % Player 1 has  Handshake Phase 1 (No Player 1)
-        end
-        if bolPlayer2
-            if player2Server.BytesAvailable > 0
-                player2Data = fread(player2Server, player2Server.BytesAvailable);
-                serversState(2) = 1; % Player 1 has finished Handshake Phase 2
-            end
-        else
-            serversState(2) = 1; % Player 1 has finished Handshake Phase 2
-        end
-        % TODO : Validate playerData, not just any data.
-    end
+    % Waiting for 2 Players to finish the Handshake.
+    waitTwoPlayers()
     
     disp('Handshake Done !')
     filename = 'strong_and_holding.mp3';
@@ -347,12 +280,8 @@ while true %MegaLoop While
     if bolTablet
         fwrite(tabletServer, 255, 'uint8'); %FF in hex
     end
-    if bolPlayer1
-        fwrite(player1Server, 'D');
-    end
-    if bolPlayer2
-        fwrite(player2Server, 'D');
-    end
+    sendCommandPlayers('D');
+
     
     % Waiting for 1 of the 2 Players to quit the game.
     serversState = zeros(2,1);
@@ -516,12 +445,7 @@ while true %MegaLoop While
                 fwrite(ev3Server, uint8([0,0]), 'uint8' );
             end
             nRun = nRun +1;
-            if bolPlayer1
-                fwrite(player1Server, 'R');
-            end
-            if bolPlayer2
-                fwrite(player2Server, 'R');
-            end
+            sendCommandPlayers('R');
             tone(600,300);
             tone(600,300);
             delay_ms(2000);
@@ -553,6 +477,7 @@ if bolTablet
     fclose(tabletServer);
 end
 
+
 % Close Player 1
 if bolPlayer1
     fwrite(player1Server,'Q');
@@ -568,3 +493,41 @@ if bolPlayer2
 end
 
 disp('Bye !')
+
+
+    function waitTwoPlayers()
+        % Waiting for 2 Players to finish the Handshake
+        serversState = zeros(2,1);
+        while min(serversState) == 0
+            delay_ms(100);
+
+            if bolPlayer1
+                if player1Server.BytesAvailable > 0
+                    player1Data = fread(player1Server, player1Server.BytesAvailable);
+                    serversState(1) = 1; % Player 1 has finished Handshake Phase 2
+                end
+            else
+                serversState(1) = 1; % Player 1 has finished Handshake 
+            end
+            if bolPlayer2
+                if player2Server.BytesAvailable > 0
+                    player2Data = fread(player2Server, player2Server.BytesAvailable);
+                    serversState(2) = 1; % Player 2 has finished Handshake Phase 2
+                end
+            else
+                serversState(2) = 1; % Player 2 has finished Handshake 
+            end
+        end
+
+    end
+
+    function sendCommandPlayers(command)
+            if bolPlayer1
+                fwrite(player1Server, command);
+            end
+            if bolPlayer2
+                fwrite(player2Server, command);
+            end
+    end
+
+end % Boss Function
