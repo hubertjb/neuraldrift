@@ -7,8 +7,6 @@ cd('..\');
 addpath(genpath(pwd));
 cd(folder);
 
-%Begining
-
 % Find the player number
 if port2boss == 33001
     playerNb = 1;
@@ -21,7 +19,6 @@ end
 
 disp(['Player ',num2str(playerNb)]);
 disp(playerName);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%              Connection with Boss             %%%%%%%%
@@ -84,16 +81,19 @@ end
 %%%%%%%%              Title                            %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-quitFlag = false;
-evalFirst = true;
-
 nSamplesTrain = trainDuration * fs;
 nSamplesWindow = windowDuration * fs;
 nSamplesOverlap = testOverlap * fs;
 
 nColumns = numel(tags);
-
 evalData = NaN(nSamplesWindow*2,nColumns);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%              Main Loop                        %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+quitFlag = false;
+evalFirst = true;
 nRun = 1;
 
 while true % Player Loop
@@ -116,32 +116,31 @@ while true % Player Loop
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'C', %Training classifier
-            % Select electrodes
-            % Train0 and Train1 are divided in windows
-            % Features are computed window-wise
-            % Feature vectors and labels are used fro training the classifier
-            % Save configuration
+            
+            % Select electrodes using electArray variable
+            % Model = trainCalssifier(train0, train1, nSamplesWindow, nSamplesOverlap)
+                % Train0 and Train1 are divided in windows
+                % Features are computed window-wise
+                % Feature vectors and labels are used fro training the classifier
+                % Save Model
             sound(y,sampF); %beep
-            pause(0.2);
+            delay_ms(200);
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'D', %Evaluate
+            evalTic = tic;
+            limit = windowDuration;
             while true %Classification Loop
-                % Get data and classify it
-                limit = testOverlap; % How often EEG data will be requested
-                if evalFirst % To obtain the First window, without overlap
-                    tic
-                    limit = windowDuration;
-                    evalFirst = false;
-                end
-                
-                if toc > limit*1.1
-                    tic
+                delay_ms(50);
+                % Get data and classify
+                if toc(evalTic) > limit*1.1
+                    evalTic = tic;
+                    limit = testOverlap;
                     eegData = getDataMules();
                     evalData = [eegData; evalData];
                     evalData = evalData(1:2*nSamplesWindow,:);
+                    %yHat = evaluateExample(evalData, Model) Classify the example
                     yHat = 1;
-                    % Classify the example
                     fwrite(playerClient, yHat);
                 end
                            
@@ -150,15 +149,16 @@ while true % Player Loop
                     commandBoss = fread(playerClient, 1);
                     if(commandBoss == 'Q') %If Q command
                         quitFlag = true;
-                        evalFirst = true;
                         break; % Breaks Classification Loop
                     elseif(commandBoss == 'R')                      
                         nRun = nRun+1;
                         break; % Breaks Classification Loop
                     end %If Q command
-                end % If available bytes    
+                end % If available bytes 
+                
             end % Classification Loop          
     end % Command Switch  
+    
     if quitFlag
         break;
     end
@@ -170,46 +170,50 @@ delay_ms(500);
 fclose(playerClient);
 disp(['Done with Player ',num2str(playerNb)]);
 
-%   Read command (or wait for it)
-%       switch with command
-%           Calib0
-%               Flushes MuLES 
-%               Wait training Secs and read data
-%               Send exit to boss
-%           Calib1
-%               Flushes MuLES 
-%               Wait training Secs and read data
-%               Send exit to boss
-%           Training
-%               Feature comp
-%               Train
-%               Flushes MuLES 
-%               Send exit to boss
-%           Evaluation
-%               While true
-%                   if bytes.ava > 0 
-%                       read if == Q or R break, quitFlag
-%                   else
-%                       Wait 100ms
-%                       Get data
-%                       Fill buffer
-%                       If lleno, 
-%                       Feature comp
-%                       Eval
-%           if quitFlag
-%               Brake this while
-%               Send exit to boss           
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%              Auxiliar Functions               %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+    function flushMules()
+        %Deletes all the data in the MuLES Buffer
+        commandMules = 'F';
+        fwrite(mulesClient, commandMules);
+    end
 
+    function [dev_name, dev_hardware, fs, data_format, nCh] = headerMules()
+        % Get information about the EEG device from MuLES
+        commandMules = 'H';
+        fwrite(mulesClient, commandMules);
+        nBytes_4B = fread(mulesClient, 4);  %How large is the package (# bytes)
+        nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
+        package = fread(mulesClient,nBytes);
+        header_str = char(package)';
+        [dev_name, dev_hardware, fs, data_format, nCh] = mules_parse_header(header_str);
+    end
 
+    function  ch_labels = chNamesMules()
+        % Get Channel Names from MuLES
+        commandMules = 'N';
+        fwrite(mulesClient, commandMules);
+        nBytes_4B = fread(mulesClient, 4);  %How large is the package (# bytes)
+        nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
+        package = fread(mulesClient,nBytes);
+        ch_names_str = char(package)';
+        tmp = textscan(ch_names_str,'%s','delimiter',',');
+        ch_labels = tmp{1};
+    end
 
+    function eeg_data = getDataMules()
+        % Get EEG Data from MuLES
+        commandMules = 'R';
+        fwrite(mulesClient, commandMules);
+        nBytes_4B = fread(mulesClient, 4);  %How large is the package (# bytes)
+        nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
+        eeg_package = fread(mulesClient,nBytes);
+        eeg_data = mules_parse_data(eeg_package,tags);
+    end
 
-
-
-
-
-
+end % END of PlayerFunct
 
 
 % %Buffer definition, it will depend of FS and #CHANNELS
@@ -238,123 +242,9 @@ disp(['Done with Player ',num2str(playerNb)]);
 
 
 
-
-
-
-% delay_ms(1000);
-% 
-% if(mulesClient.BytesAvailable > 0)
-%     fread(mulesClient, mulesClient.BytesAvailable);
-% end
-
 % FullTestSave = ones(length(electArray),1)';
 % FullYEval = 1;
 % FullYHat = 1;
-
-% needWaitHandshake = 1;
-% nRun = 1;
-% while true %Main loop, it is controlled by the TCP/IP packages rate
-%     if needWaitHandshake == 1
-%         playerData = fread(playerClient, 1);
-%         if(playerData == 'A')
-%             disp('Handshake Phase 1...');
-%             state = 'acqTrain0';
-%             % Empty Buffer.
-%             if(mulesClient.BytesAvailable > 0)
-%                 fread(mulesClient, mulesClient.BytesAvailable);
-%             end
-%             needWaitHandshake = 0;
-%         end
-%         if(playerData == 'B')
-%             disp('Handshake Phase 2...');
-%             state = 'acqTrain1';
-%             % Empty Buffer.
-%             if(mulesClient.BytesAvailable > 0)
-%                 fread(mulesClient, mulesClient.BytesAvailable);
-%             end
-%             needWaitHandshake = 0;
-%         end
-%         if(playerData == 'C')
-%             disp('Start Training...');
-%             state = 'trainClassifier';
-%             % Empty Buffer.
-%             if(mulesClient.BytesAvailable > 0)
-%                 fread(mulesClient, mulesClient.BytesAvailable);
-%             end
-%             needWaitHandshake = 0;
-%         end
-%         if(playerData == 'D')
-%             disp('Start Real Time Game...');
-%             state = 'startClassification';
-%             % Empty Buffer.
-%             if(mulesClient.BytesAvailable > 0)
-%                 fread(mulesClient, mulesClient.BytesAvailable);
-%             end
-%             needWaitHandshake = 0;
-%         end
-%         %This is not reach unless you send Q before the testing part
-%         if(playerData == 'Q')
-%             disp('Exit...');
-%             break;
-%         end
-%     end
-%     
-%     %After Training the data is flushed
-%     if strcmp(state,'startClassification')
-%         if(mulesClient.BytesAvailable > 0)
-%             fread(mulesClient, mulesClient.BytesAvailable);
-%         end
-%         state = 'classification';
-%     end
-%     %Catch error in communication with the EEG acq client
-%     try
-%         nBytes_4B = fread(mulesClient, 4);
-%     catch err;
-%         break %break if there is an error in communication
-%     end
-%     %Break the while loop if the first byte is -1
-%     nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
-%     if nBytes == -1 %If -1 is recived, close TCP communication
-%         break;
-%     end
-%     %Catch error in communication with the EEG acq client
-%     try
-%         data = fread(mulesClient,nBytes);
-%     catch err;
-%         break
-%     end
-%     %Give order to the incoming data, and removing DC component
-%     eegData = mesDataFormat(data,tags);%normalize_col(mesDataFormat(data,tags));
-%     [newRows, ~ ] = size(eegData);
-%     
-%     trainEEG =  [trainEEG(1+newRows:end, :); eegData];
-%     testEEG = [testEEG(1+newRows:end, :); eegData];
-%     
-%     if ~isnan(trainEEG(1,1))
-%         switch state
-%             case 'acqTrain0',
-%                 disp('Handshake Phase 1 Done !');
-%                 fwrite(playerClient, 1);
-%                 needWaitHandshake = 1;
-%                 train0 = trainEEG;
-%                 trainEEG(:) = NaN;
-%                 %state = 'acqTrain1';
-%                 sound(y,sampF); %beep
-%                 
-%                 size(train0)
-%                 
-%             case 'acqTrain1',
-%                 disp('Handshake Phase 2 Done !');
-%                 %Don't tell Boss now, wait after Training. (since not long)
-%                 fwrite(playerClient, 1);
-%                 needWaitHandshake = 1;
-%                 train1 = trainEEG;
-%                 trainEEG(:) = NaN;
-%                 %state = 'trainClassifier';
-%                 sound(y,sampF); %beep
-%                 
-%         end %switch for training examples
-%     end %if first row is NaN
 %     
 %     switch state
 %         case 'trainClassifier',
@@ -552,41 +442,3 @@ disp(['Done with Player ',num2str(playerNb)]);
 % % while bPress == 0
 % %     bPress = waitforbuttonpress;
 % % end
-
-
-    function flushMules()
-        commandMules = 'F';
-        fwrite(mulesClient, commandMules);
-    end
-
-    function [dev_name, dev_hardware, fs, data_format, nCh] = headerMules()
-        commandMules = 'H';
-        fwrite(mulesClient, commandMules);
-        nBytes_4B = fread(mulesClient, 4);  %How large is the package (# bytes)
-        nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
-        package = fread(mulesClient,nBytes);
-        header_str = char(package)';
-        [dev_name, dev_hardware, fs, data_format, nCh] = mules_parse_header(header_str);
-    end
-
-    function  ch_labels = chNamesMules()
-        commandMules = 'N';
-        fwrite(mulesClient, commandMules);
-        nBytes_4B = fread(mulesClient, 4);  %How large is the package (# bytes)
-        nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
-        package = fread(mulesClient,nBytes);
-        ch_names_str = char(package)';
-        tmp = textscan(ch_names_str,'%s','delimiter',',');
-        ch_labels = tmp{1};
-    end
-
-    function eeg_data = getDataMules()
-        commandMules = 'R';
-        fwrite(mulesClient, commandMules);
-        nBytes_4B = fread(mulesClient, 4);  %How large is the package (# bytes)
-        nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
-        eeg_package = fread(mulesClient,nBytes);
-        eeg_data = mules_parse_data(eeg_package,tags);
-    end
-
-end
