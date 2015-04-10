@@ -1,6 +1,7 @@
 neuralDrift v2.0
 
 ** LICENSE **
+
 neuralDrift is licensed under the MIT License (see LICENSE.txt).
 
 ** DESCRIPTION **
