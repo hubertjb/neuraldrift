@@ -55,6 +55,9 @@ audiofilename = 'beep.mp3';
 [y, sampF] = audioread(audiofilename);
 sound(y,sampF);
 
+% Notify Boss
+fwrite(playerClient, 1); % Notify Boss
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%              Obtain EEG device info           %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -162,6 +165,9 @@ while true % Player Loop
 end %Player Loop
 
 sound(y,sampF); %beep
+% Kill MuLES
+killMules();
+delay_ms(500);
 fclose(mulesClient);
 delay_ms(500);
 fclose(playerClient);
@@ -208,6 +214,12 @@ disp(['Done with Player ',num2str(playerNb)]);
         nBytes = double(swapbytes(typecast(uint8(nBytes_4B),'int32')));
         eeg_package = fread(mulesClient,nBytes);
         eeg_data = mules_parse_data(eeg_package,tags);
+    end
+
+    function killMules()
+        %Stops Acquisition and closes MuLES
+        commandMules = 'K';
+        fwrite(mulesClient, commandMules);
     end
 
 end % END of PlayerFunct

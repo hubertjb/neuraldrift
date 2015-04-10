@@ -7,20 +7,14 @@ clear all;
 close all;
 clc;
 
-% Admin Messages
-% disp('** KbCheck Commented ! **');
-% Modif : Feature Extract --> electAlpha / electBeta / 9-11 Hz. 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%   === Configuration of Output Devices ===     %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% EV3 Robot, Bluetooth
+% Enables of Disables EV3 Robot, Bluetooth
 bolRobot = false;
 
-% Android App, Bluetooth
+% % Enables of Disables Android App, Bluetooth
 bolTablet = true;
 
 % Bluetooth configuration for Smartphone or Table running the Android App
@@ -32,14 +26,14 @@ btChannel = 3;
 % take longer
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%   === Players information ===                 %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%   === Player Information ===                  %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Name of Players
+% Name of Players 
 player1Name = 'Ana';
 player2Name = 'Wil';
+
+% TCP/IP ports for communication with respective PlayerFunct.m instances 
 player1Port = 33001;
 player2Port = 33002;
 
@@ -54,40 +48,45 @@ if isempty(player1Name) || isempty(player2Name)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%% === Configuration of Game Mechanics ===       %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Game Mechanics
-trainDuration  = 15;  %Duration of each training section
-windowDuration = 2;  %Duration of the test window to extract features
-testOverlap    = 1;    %Overlap for the windows
+trainDuration  = 15;  % Duration of each training section
+windowDuration = 2;   % Duration of the test window to extract features
+testOverlap    = 1;   % Overlap for the windows
 
 % General Variables
-command = 'x';
 bolPlayer1 = true;
 bolPlayer2 = true;
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%            === Connections Init ===           %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%   === Dependencies and User Interaction ===   %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Adds the parent directory to the Matlab Path
 folder = [pwd '\'];
 cd('..\');
 addpath(genpath(pwd));
+pathMules = [pwd '\' 'mules'];
 cd(folder);
 
-% Matlab executable path
+% Matlab executable path, change if necessary
 matlabExePath = ' "C:\Program Files\MATLAB\R2013a\bin\matlab.exe" ';
 disp('###### Neural Drift #######')
 disp('');
 
+% Creation of a Figure to detect pressesed keys
+h = figure();
+set(h,'currentch',char(0));
+
+% Audio cue, Beep
+audiofilename = 'beep.mp3';
+[yBeep, FsBeep] = audioread(audiofilename);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%              Connection with EV3              %%%%%%%%
+%%%%%%%%          Connection with EV3 Robot            %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if bolRobot
     disp('Waiting for EV3 client on port 33000...')
@@ -95,14 +94,16 @@ if bolRobot
     ev3Server.InputBufferSize = 500000;
     ev3Server.Timeout = 60; %in seconds
     %Run EV3 client script in another matlab instance
-    system( [ matlabExePath ' -nosplash -nodesktop -r "run(''' folder '\demo7\demo7_ev3_client.m''); exit();"']);
+    system( [ matlabExePath ' -nosplash -nodesktop -r "run(''' folder '\ev3_client.m''); exit();"']);
     %Open a connection with the EV3 client
     fopen(ev3Server);
     disp('Successful connection with EV3 client')
+    delay_ms(50);
+    sendPowersEV3(0,0);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%            Connection with Tablet             %%%%%%%%
+%%%%%%%%  Connection with Android App (in Tablet)      %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if bolTablet
     disp('Waiting for connection with Tablet...');
@@ -118,7 +119,6 @@ if bolTablet
     disp('Bluetooth connection opened sucessfully!');
     disp('Touch the tablet screen to start');
     input('Press Enter to Continue')
-    %delay_ms(200);
     %Receiving a string from the Tablet, the string is ended ('\r')
     index=1;
     while true
@@ -138,6 +138,13 @@ if bolTablet
     %the bluettoth connection is working properly
     disp(char(dataRx));
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%  Execute MuLES Instances                      %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+system( [pathMules '\mules.exe -- "DEVICE01" PORT=30001 LOG=F TCP=T &']);
+system( [pathMules '\mules.exe -- "DEVICE02" PORT=30002 LOG=F TCP=T &']);
+cd(folder);
 
 %Start sound
 filename = 'deep_bass.wav';
@@ -160,9 +167,6 @@ if bolPlayer1
         'PlayerFunct(33001,30001,' playerNameAux ',' num2str(trainDuration) ',' ...
         num2str(windowDuration) ',' num2str(testOverlap)]  ')''); exit();"']);
     
-    %Check for device number and start the acquisition with that
-    %system( [folder '\EEG_Acquisition1\eegacq.exe &']);
-    
     %fopen waits for the client connection.
     fopen(player1Server);
     disp('Connected to Player 1 !')
@@ -183,27 +187,27 @@ if bolPlayer2
         'PlayerFunct(33002,30002,' playerNameAux ',' num2str(trainDuration) ',' ...
         num2str(windowDuration) ',' num2str(testOverlap)]  ')''); exit();"']);
     
-    %Check for device number and start the acquisition with that
-    %system( [folder '\EEG_Acquisition2\eegacq.exe &']);
-    
     %fopen waits for the client connection.
     fopen(player2Server);
     disp('Connected to Player2 !')
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%        === Handshake / Calibration ===        %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% filename = 'initiating.mp3';
-% [y, Fs] = audioread(filename);
-% sound(y,Fs/1.1);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%              === NeuralDrift ===              %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Waiting for both Players to send notifier
+waitTwoPlayers();
+    
+% First Run
 nRun = 1;
-while true %MegaLoop While
+
+while true % N-Runs Loop
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%                    Phase 1                    %%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % Clear communication buffers from previous data for Player1 and Player2
     if bolPlayer1 && player1Server.BytesAvailable > 0
         fread(player1Server, player1Server.BytesAvailable);
     end
@@ -212,13 +216,7 @@ while true %MegaLoop While
     end
     
     disp('Handshake Phase 1...')
-    % filename = 'phase1.mp3';
-    % [y, Fs] = audioread(filename);
-    % sound(y,Fs/1.1);
-    if bolTablet
-        fwrite(tabletServer, 204, 'uint8'); %CC in hex
-    end
-    
+    sendCommandTablet(204); % 0xCC
     sendCommandPlayers('A');
     
     %This sound indicates that the Phase 1 is initiated
@@ -226,44 +224,47 @@ while true %MegaLoop While
     [y, Fs] = audioread(filename);
     sound(y,Fs/1.1);
     
-    % Waiting for 2 Players to finish the Handshake.
+    % Waiting for both Players to send notifier
     waitTwoPlayers();
 
+    % Phase 1 completed
     disp('Handshake Phase 1 Done !')
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%                    Phase 2                    %%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp('Handshake Phase 2...')
+    sendCommandTablet(221); % 0xDD
+    sendCommandPlayers('B');
+    
+    %This sound indicates that the Phase 2 is initiated
     filename = 'phase2.mp3';
     [y, Fs] = audioread(filename);
     sound(y,Fs/1.1);
-    if bolTablet
-        fwrite(tabletServer, 221, 'uint8'); %DD in hex
-    end
-    sendCommandPlayers('B');
     
-    % Waiting for 2 Players to finish the Handshake.
+    % Waiting for both Players to send notifier
     waitTwoPlayers()
     
-    %Calibration Done !
+    % Phase 2 completed 
     disp('Handshake Phase 2 Done !')
     
+    %This sound indicates that Phase 1 and Phase 2 are completed
     filename = 'completed.mp3';
     [y, Fs] = audioread(filename);
     sound(y,Fs/1.1);
     delay_ms(1000);
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%                   Training                    %%%%%%%%
+    %%%%%%%%              === Training ===                 %%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    disp('Handshake Training...')
-    if bolTablet
-        fwrite(tabletServer, 238, 'uint8'); %EE in hex
-    end
+    disp('Handshake Training...')  
+    sendCommandTablet(238); % 0xEE
     sendCommandPlayers('C');
     
-    % Waiting for 2 Players to finish the Handshake.
+    % Waiting for both Players to send notifier
     waitTwoPlayers()
     
+    %This sound indicates that the Classifiers has been trained
     disp('Handshake Done !')
     filename = 'strong_and_holding.mp3';
     [y, Fs] = audioread(filename);
@@ -271,25 +272,22 @@ while true %MegaLoop While
     delay_ms(1000);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%            === Real Time Game ===             %%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    disp('Starting the Game...')
-    tone(500,1000); % Sound : Ready to Roll.
-    if bolTablet
-        fwrite(tabletServer, 255, 'uint8'); %FF in hex
-    end
+    disp('Starting the Game...');    
+    sendCommandTablet(255); % 0xFF
     sendCommandPlayers('D');
-
+    
+    %This sound indicates that the Game has started
+    sound(yBeep,FsBeep);
     
     % Waiting for 1 of the 2 Players to quit the game.
     serversState = zeros(2,1);
+    
+    % Game Variables
     powerP1 = 20;
-    powerP1LastStep = 0;
     powerP1LastClass = 0;
     powerP2 = 20;
-    powerP2LastStep = 0;
     powerP2LastClass = 0;
     toggleStop = false;
     newDecision1 = 1;
@@ -299,17 +297,21 @@ while true %MegaLoop While
     player1Data = 0;
     player2Data = 0;
     
-    while max(serversState) == 0 %While for game
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%          Gaming Loop                          %%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+    
+    while true %Gaming Loop
         
         incStep = 50;
         motorFactor = 0.25;            
-        %Game Mechanic. The magic happens HERE !
+        %Game Mechanics
         if bolPlayer1 && player1Server.BytesAvailable > 0
             player1Data = fread(player1Server, player1Server.BytesAvailable);
             newDecision1 = 1;
-            switch player1Data
+            switch player1Data(1)
                 case 1,
-                    %                 powerP1 = 50;
+                    % powerP1 = 50;
                     if powerP1LastClass == 1
                         powerP1Step = powerP1Step + incStep;
                     else
@@ -317,15 +319,13 @@ while true %MegaLoop While
                     end
                     powerP1 = powerP1 + powerP1Step;
                 case 2,
-                    %                powerP1 = 0;
+                    % powerP1 = 0;
                     if powerP1LastClass == 2
                         powerP1Step = powerP1Step - incStep;
                     else
                         powerP1Step = -incStep;
                     end
                     powerP1 = powerP1 + powerP1Step;
-                case 9, %PlayerFunct wants to finish
-                    serversState(1) = 1;
             end
             powerP1LastClass = player1Data;
                      
@@ -339,9 +339,9 @@ while true %MegaLoop While
         if bolPlayer2 && player2Server.BytesAvailable > 0
             player2Data = fread(player2Server, player2Server.BytesAvailable);
             newDecision2 = 1;
-            switch player2Data
+            switch player2Data(1)
                 case 1,
-                    %                 powerP2 = 50;
+                    % powerP2 = 50;
                     if powerP2LastClass == 1
                         powerP2Step = powerP2Step + incStep;
                     else
@@ -349,15 +349,13 @@ while true %MegaLoop While
                     end
                     powerP2 = powerP2 + powerP2Step;
                 case 2,
-                    %                powerP2 = 0;
+                    % powerP2 = 0;
                     if powerP2LastClass == 2
                         powerP2Step = powerP2Step - incStep;
                     else
                         powerP2Step = - incStep;
                     end
                     powerP2 = powerP2 + powerP2Step;
-                case 9, %PlayerFunct wants to finish
-                    serversState(2) = 1;
             end
             powerP2LastClass = player2Data;
             
@@ -368,10 +366,10 @@ while true %MegaLoop While
             end
         end
         
+        %If a decision was read from any player, update Robot and Tablet
         if newDecision1 == 1 || newDecision2 == 1
             newDecision1 = 0;
             newDecision2 = 0;
-            %If a decision was read from any player, update Robot and Tablet
             barP1 = uint8(round(powerP1*(10/100)));
             barP2 = uint8(round(powerP2*(10/100)));
             bar1Array = dec2bin(barP1,4);
@@ -381,102 +379,88 @@ while true %MegaLoop While
             %Low  4 bits encode power from 0 to 10 for P2
             byteBars = [bar1Array,bar2Array];
             bytePowers = uint8(bin2dec(byteBars));
-            if bolTablet
-                fwrite(tabletServer, bytePowers, 'uint8' );
-                delay_ms(500);
-            end
             
-            if bolRobot
-                if toggleStop
-                    fwrite(ev3Server, uint8([0,0]), 'uint8' );
-                else
-                    fwrite(ev3Server, uint8([motorFactor * powerP1, motorFactor * powerP2]), 'uint8' );
-                end
-            end
+            sendCommandTablet(bytePowers);
+            delay_ms(500); 
             
+            if toggleStop
+                sendPowersEV3(0,0);
+            else
+                sendPowersEV3(motorFactor * powerP1,motorFactor * powerP2);
+            end
+                       
             fprintf('%d %d (%d) | %d %d (%d)\n', player1Data, powerP1, powerP1Step, player2Data, powerP2, powerP2Step) 
         end
         
-        %Check for space key to stop the robot (send zeros ONLY to Robot)        
-        [keyIsDown, secs, keyCode, deltaSecs] = KbCheck([]);
-        if sum(keyCode) > 1
-            disp('Press only one key at the same time');
-        elseif sum(keyCode) == 0
-            command = 'x';
-        else
-            command = KbName(find(keyCode));
-            disp(command);
-        end
+        % Detect KeyPressed in Figure "h"
+        drawnow; %Need to update CurrentCharacter property
+        commandKey = get(h,'CurrentCharacter');
+        set(h,'currentch',char(0));
         
-        switch command
-            case 'space',
+        switch commandKey
+            case ' ', %SPACE, turns the Robot motors ON / OFF
                 disp(toggleStop);
                 toggleStop = ~toggleStop;
-                delay_ms(50);
-            case 'esc',
-                break; %breaks While for game
-            case 'r',
-                break; %breaks While for game
-            case 'n'
+            case char(27), %ESC  
+                break; %Breaks Gaming Loop
+            case 'r', 
+                break; %Breaks Gaming Loop
+            case 'n', %prints information about the game
                 fprintf('Class for P1 = %d\r',player1Data);
                 fprintf('Class for P2 = %d\r',player2Data);
                 fprintf('P1 power = %d\r',powerP1);
                 fprintf('P2 power = %d\r',powerP2);
                 fprintf('Byte sent to Tablet = %x\r',bytePowers);
                 fprintf('Toggle Status %i\r', toggleStop);
-        end
-        %delay_ms(10);
-    end
+        end %Switch commandKey
+    end %Gaming Loop
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%           === Out of the Playing part ===     %%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%           === Out of Gaming Loop ===          %%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    switch command
-        case 'esc'
-            break; %Breaks the MegaLoop
-        case 'r'
-            if bolTablet
-                fwrite(tabletServer, 187, 'uint8'); %FF in hex
-            end
-            if bolRobot
-                fwrite(ev3Server, uint8([0,0]), 'uint8' );
-            end
+    switch commandKey
+        case char(27), %ESC
+            break; %Breaks N-Runs Loop
+        case 'r' %Reinitialize the Game (Goto Phase 1)
+            sendCommandTablet(187); %xBB
+            sendPowersEV3(0,0);
             nRun = nRun +1;
             sendCommandPlayers('R');
-            tone(600,300);
-            tone(600,300);
+            sound(yBeep,FsBeep);
+            delay_ms(200);
+            sound(yBeep,FsBeep);
             delay_ms(2000);
             input('Press ENTER to continue');
     end
     
-end %MegaLoop While
+end %N-Runs Loop
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%         === Closing connections  ===          %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%         === Closing the Whole Thing ! ===     %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-tone(600,1500); % Sound : END
+%This sound indicates that all connections will be closed
+sound(yBeep,FsBeep);
+delay_ms(200);
+sound(yBeep,FsBeep);
+delay_ms(200);
+sound(yBeep,FsBeep);
 
 % Close EV3
 if bolRobot
-    fwrite(ev3Server, uint8([0,0]), 'uint8' );
+    sendPowersEV3(0,0);
     delay_ms(200);
-    fwrite(ev3Server, uint8([101,101]), 'uint8' );
+    sendPowersEV3(101,101); % Stops the ev3_client.m script
     delay_ms(200);
     fclose(ev3Server);
 end
 
 % Close Tablet
 if bolTablet
-    fwrite(tabletServer, 187, 'uint8'); %BB in hex
+    sendCommandTablet(187); % 0xBB
     delay_ms(500);
     fclose(tabletServer);
 end
-
 
 % Close Player 1
 if bolPlayer1
@@ -492,11 +476,18 @@ if bolPlayer2
     fclose(player2Server);
 end
 
+close all
 disp('Bye !')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%         === Auxiliary Functions ===           %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     function waitTwoPlayers()
-        % Waiting for 2 Players to finish the Handshake
+        % Waiting for 2 Players to finish the Handshake, it finishes when
+        % the two players answer
         serversState = zeros(2,1);
         while min(serversState) == 0
             delay_ms(100);
@@ -509,6 +500,7 @@ disp('Bye !')
             else
                 serversState(1) = 1; % Player 1 has finished Handshake 
             end
+            
             if bolPlayer2
                 if player2Server.BytesAvailable > 0
                     player2Data = fread(player2Server, player2Server.BytesAvailable);
@@ -522,11 +514,28 @@ disp('Bye !')
     end
 
     function sendCommandPlayers(command)
+        %Send Commands to both Players
             if bolPlayer1
                 fwrite(player1Server, command);
             end
             if bolPlayer2
                 fwrite(player2Server, command);
+            end
+    end
+
+    function sendCommandTablet(command)
+        %Send Command to Tablet if it is enabled
+            if bolTablet
+                % Command for table is composed for two nibbles 
+                fwrite(tabletServer, command, 'uint8'); 
+            end
+    end
+
+    function sendPowersEV3(power1, power2)
+        %Send Power values for the EV3 Robot, if it is enabled
+            if bolRobot
+                % Package consist of two bytes, power1 and power2  
+                fwrite(ev3Server, uint8([power1,power2]), 'uint8' );
             end
     end
 
