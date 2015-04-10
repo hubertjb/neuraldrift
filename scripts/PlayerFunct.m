@@ -25,7 +25,7 @@ disp(playerName);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Trying to connect to Boss...')
 playerClient = tcpip('0.0.0.0', port2boss, 'NetworkRole', 'client');
-playerClient.Timeout = 10; %in seconds
+playerClient.Timeout = 60; %in seconds
 fopen(playerClient);
 disp('Connected to Boss !')
 
@@ -61,15 +61,13 @@ fwrite(playerClient, 1); % Notify Boss
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%              Obtain EEG device info           %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[dev_name, dev_hardware, Fs, tags, nCh] = headerMules();
 
-[device, Fs, tags, nCh] = headerMules();
-chLabels = chNamesMules();
-
-disp(strcat('Using : ', device));
+disp(strcat('Using : ', dev_hardware));
 
 % Selection of Electrodes to compute Alpha power
-switch device
-    case 'MUSE'
+switch dev_hardware
+    case 'INTERAXON-MUSE'
         electArray = [1:4];
         electNames = {'TP7', 'Fp1', 'Fp2', 'TP8'};
     case 'EMOTIV'
@@ -105,23 +103,25 @@ while true % Player Loop
         case 'A', %Training data Class 0
             disp('Handshake Phase 1...');
             flushMules();
-            pause(trainDuration*1.1);
+            pause(trainDuration*1.2);
             eegData = getDataMules();
             train0 = eegData(1:nSamplesTrain,:);
+            train0 = flipud(train0);
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'B', %Training data Class 1
             disp('Handshake Phase 2...');
             flushMules();
-            pause(trainDuration*1.1);
+            pause(trainDuration*1.2);
             eegData = getDataMules();
             train1 = eegData(1:nSamplesTrain,:);
+            train0 = flipud(train1);
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'C', %Training classifier
             classifierType = 'SVM';
             % Select electrodes using electArray variable
-            [model, mu_col, sigma_col, selectedFeatInd] = trainClassifier(train0(:,electArray), train1(:,electArray), ...
+            [model, mu_col, sigma_col, selectedFeatInd] = learnModel(train0(:,electArray), train1(:,electArray), ...
                                                                           nSamplesWindow, nSamplesOverlap, Fs, classifierType);
             sound(y,sampF); %beep
             delay_ms(200);
@@ -139,7 +139,8 @@ while true % Player Loop
                     eegData = getDataMules();
                     evalData = [eegData; evalData];
                     evalData = evalData(1:2*nSamplesWindow,:);
-                    yHat = evaluateExample(evalData(:,electArray), Fs, model, ...
+                    evalDataInv = flipud(evalData);
+                    yHat = evaluateExample(evalDataInv(:,electArray), Fs, model, ...
                                            mu_col, sigma_col, selectedFeatInd, classifierType); % Classify the example
                     fwrite(playerClient, yHat);
                 end

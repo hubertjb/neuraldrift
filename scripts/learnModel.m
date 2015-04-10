@@ -22,6 +22,9 @@ disp('Extracting features...');
 
 %Extract features for class 0
 electUsed = double(train0);
+disp(size(train0))
+disp(size(train1))
+
 
 L = length(electUsed);
 nbWin = floor(L/(windowLength - overlapSampleLength))-2;
@@ -33,7 +36,8 @@ for i = 0:nbWin-1
     dataWin = electUsed(start:finish,:);
     
     if i == 0
-        nFeatures = length(dataWin);
+        [tmp, ~] = featureExtract(dataWin, Fs, 0);
+        nFeatures = length(tmp);
         featArray0 = zeros(nbWin,nFeatures);
     end
     
@@ -43,8 +47,8 @@ end
 % Extract features for class 1
 electUsed = double(train1);
 
-L = length(electUsed);
-nbWin = floor(L/(windowLength - overlapSampleLength))-2;
+% L = length(electUsed);
+% nbWin = floor(L/(windowLength - overlapSampleLength))-2;
 for i = 0:nbWin-1
     % Get the window
     start = (windowLength - overlapSampleLength)*i + 1;
@@ -52,16 +56,20 @@ for i = 0:nbWin-1
     dataWin = electUsed(start:finish,:);
     
     if i == 0
-        nFeatures = length(dataWin);
+        [tmp, ~] = featureExtract(dataWin, Fs, 1);
+        nFeatures = length(tmp);
         featArray1 = zeros(nbWin,nFeatures);
     end
     
     [featArray1(i+1,:), featNames] = featureExtract(dataWin, Fs, 1);
 end
 
+
 % Remove start and end of featArray
 featArray0 = featArray0(2:end-2,:);
 featArray1 = featArray1(2:end-2,:);
+
+nbWin = size(featArray0,1);
 
 % Z-score normalize the features
 featArrayAll = [featArray0; featArray1];
@@ -89,11 +97,11 @@ disp('Training the classifier...');
 % Plot the main results
 figure('units','normalized','outerposition',[0 0 1 1])
 subplot(3,1,1);
-plot([train0, train1]')
+plot([train0, train1])
 xlabel('Time points')
 ylabel('Raw EEG amplitude')
-legend(electNames);
-title(['Calibration session for Player', num2str(playerNb),' (train acc.: ',num2str(trainingAcc),')']);
+%legend(electNames);
+title(['Calibration session (train acc.: ',num2str(trainingAcc),')']);
 
 subplot(3,1,2);
 plot([featArray0(:,selectedFeatInd); featArray1(:,selectedFeatInd)])
@@ -102,11 +110,20 @@ ylabel('Normalized feature amplitude')
 legend(featNames{selectedFeatInd});
 title([num2str(nSelectedFeat),' best features over time'])
 
-subplot(3,1,3);
-boxplot([featArray0, featArray1], 'labels', [featNames, featNames],...
-    'labelorientation','inline');
+disp(size(featArray0))
+disp(size(featArray1))
+disp(size(featNames))
+disp(size(featNames))
+
+subplot(3,2,5);
+boxplot(featArray0, 'labels', featNames,'labelorientation','inline');
 ylabel('Normalized feature amplitude')
-title('Distribution of features for the two classes')
+title('Distribution of features for the class 0')
+
+subplot(3,2,6);
+boxplot(featArray1, 'labels', featNames,'labelorientation','inline');
+ylabel('Normalized feature amplitude')
+title('Distribution of features for the class 1')
 
 drawnow
 pause(0.01);

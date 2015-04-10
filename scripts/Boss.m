@@ -12,7 +12,7 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Enables of Disables EV3 Robot, Bluetooth
-bolRobot = false;
+bolRobot = true;
 
 % % Enables of Disables Android App, Bluetooth
 bolTablet = true;
@@ -52,7 +52,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Game Mechanics
-trainDuration  = 15;  % Duration of each training section
+trainDuration  = 40;  % Duration of each training section
 windowDuration = 2;   % Duration of the test window to extract features
 testOverlap    = 1;   % Overlap for the windows
 
@@ -189,7 +189,7 @@ if bolPlayer2
     
     %fopen waits for the client connection.
     fopen(player2Server);
-    disp('Connected to Player2 !')
+    disp('Connected to Player 2 !')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
