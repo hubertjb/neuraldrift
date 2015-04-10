@@ -20,6 +20,9 @@ function [featArray, featNames] = featureExtract(rawData, Fs, varargin)
 %   featArray: array of dimension [number of features points, number of different features]
 %   featNames: cell array containing the names of all the computed features
 
+% TODO:
+% - Extract band powers per channel instead of averaging over them!
+
 % If it is calibration data, extract the class target from varargin
 nVarargs = length(varargin);
 switch nVarargs

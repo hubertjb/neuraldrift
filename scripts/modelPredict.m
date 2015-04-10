@@ -1,7 +1,7 @@
-function yEval = modelPredict(modelParams, electUsed, method)
+function yEval = modelPredict(modelParams, feats, method)
 
 if strcmp(method,'LR')
-    yEval = mnrval(modelParams, electUsed);
+    yEval = mnrval(modelParams, feats);
 elseif strcmp(method,'SVM')
-    yEval = svmclassify(modelParams, electUsed);
+    yEval = svmclassify(modelParams, feats);
 end

@@ -116,10 +116,10 @@ while true % Player Loop
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'C', %Training classifier
-            classifierType = 'SVM';
+            classifierType = 'SV'
             % Select electrodes using electArray variable
-            [model, mu_col, sigma_col, selectedFeatInd] = trainClassifier(train0(:,electArray), train1(:,electArray), ...
-                                                                          nSamplesWindow, nSamplesOverlap, Fs, classifierType);
+            model = trainClassifier(train0(:,electArray), train1(:,electArray), ...
+                                    nSamplesWindow, nSamplesOverlap, Fs);
             sound(y,sampF); %beep
             delay_ms(200);
             sound(y,sampF); %beep
@@ -136,8 +136,7 @@ while true % Player Loop
                     eegData = getDataMules();
                     evalData = [eegData; evalData];
                     evalData = evalData(1:2*nSamplesWindow,:);
-                    yHat = evaluateExample(evalData(:,electArray), Fs, model, ...
-                                           mu_col, sigma_col, selectedFeatInd, classifierType); % Classify the example
+                    yHat = evaluateExample(evalData(:,electArray), model); % Classify the example
                     fwrite(playerClient, yHat);
                 end
                            
