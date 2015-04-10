@@ -6,8 +6,6 @@
 % The robot consists in two Continuous tracks (Right and Left) connected to
 % the ports B and C respectively
 %
-%Raymundo Cassani
-%Sept 2014
 
 %% Connecting the Brick using USB and bluetooth 
 % Initialization of connection is slower using BT
@@ -16,6 +14,12 @@
 
 clear all;
 close all;
+
+% Adds the parent directory to the Matlab Path
+folder = [pwd '\'];
+cd('..\');
+addpath(genpath(pwd));
+cd(folder);
 
 mode = 'BT'; % USB, BT
 
@@ -54,7 +58,6 @@ ev3Client.Timeout = 600;
 fopen(ev3Client);
 %Timeout
 disp('Successful connection with Server')
-
 
 while true
     %This ensures that we are reading only the newest commands
