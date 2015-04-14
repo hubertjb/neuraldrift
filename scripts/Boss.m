@@ -87,6 +87,30 @@ disp('');
 h = figure();
 set(h,'currentch',char(0));
 
+% Detects when the user press 's' in the figure to start
+while true
+    delay_ms(100);
+    drawnow; %Need to update CurrentCharacter property
+    commandKey = get(h,'CurrentCharacter');
+    set(h,'currentch',char(0));
+    if isempty(commandKey)
+    else
+        isempty(commandKey)
+        if strcmp(commandKey,'s')
+            break
+        end
+    end
+end
+fprintf('\b');
+
+fprintf('\b');
+
+
+
+
+   
+
+
 % Audio cue, Beep
 audiofilename = 'beep.mp3';
 [yBeep, FsBeep] = audioread(audiofilename);
