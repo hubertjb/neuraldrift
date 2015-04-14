@@ -1,11 +1,19 @@
 /* 
  VERY IMPORTANT:
  Set bluetooth, bluetooth admin and internet sketch permissions in processing.
- 
- Processing Code:
- */
 
+*/
+//
+/* This code presents the Graphic User Interface utilized for the 
+project neuralDrift (http://neuraldrift.net/)
+Commands are sent from a PC via Bluetooth, and they control the 
+phase shown (Standby, Phase1, Phase2, Training and Game) as well as the 
+level of the bar indicators during the Game phase.
 
+The size of the elements considers the screen size and resolution of the original (2012) Nexus 7,
+(http://en.wikipedia.org/wiki/Nexus_7_%282012_version%29). 
+7 in, 8:5 aspect ratio, and  1280 x 800 pixels 
+*/
 
 //required for BT enabling on startup
 
@@ -19,7 +27,7 @@ import processing.data.*;
 
 
 PFont fontMy;
-boolean bReleased = true; //no permament sending when finger is tap
+boolean bReleased = true; // Flag to send only data only during the first finger tap
 KetaiBluetooth bt;
 boolean isConfiguring = true;
 KetaiList klist;
@@ -119,7 +127,7 @@ void draw() {
    */
 
 
-  //at app start select device
+  // At app start select device (PC that will send the Control Commands)
   if (isConfiguring)
   {
     ArrayList names;
@@ -134,7 +142,7 @@ void draw() {
     background(0, 0, 0);
     if ((mousePressed) && (bReleased == true))
     {
-      //send with BT
+      //send data with BT
       byte[] data = {
         'N', 'e', 'u', 'r', 'a', 'l', ' ', 'D', 'r', 'i', 'f', 't', '\r'
       };
@@ -148,24 +156,23 @@ void draw() {
       bReleased = true; //finger is up
     }
 
-    if (screenDisplay == 0)
+    if (screenDisplay == 0) // Standby = Initial loading sequence
     {
       dontTouchMe.initialDisplay();
     }
-    else if (screenDisplay == 1)
+    else if (screenDisplay == 1) // Phase1 = Calibration phase 1 
     {
       dontTouchMe.displayCalibrations1();
     }
-    else if (screenDisplay == 2)
+    else if (screenDisplay == 2) // Phase2 = Calibration phase 2 
     {
       dontTouchMe.displayCalibrations2();
     } 
-    else if (screenDisplay == 3)
+    else if (screenDisplay == 3) // Training = PC trains the classifier 
     {
       dontTouchMe.displayInitialize();
     }  
-
-    else if (screenDisplay == 4)
+    else if (screenDisplay == 4) // Game
     {
       //display the graphics
       dontTouchMe.display();
@@ -190,33 +197,35 @@ void onBluetoothDataEvent(String who, byte[] data) {
   println(int(data[0]));
   if (int(data[0])>=187)
   {
-    if (int(data[0]) == 187)
+    if (int(data[0]) == 187) //0xBB = Standby
     {
       screenDisplay = 0;
     }
-    if (int(data[0]) == 204)
+    if (int(data[0]) == 204) //0xCC = Phase1
     {
       screenDisplay = 1;
     }
-    if (int(data[0]) == 221)
+    if (int(data[0]) == 221) //0xDD = Phase2
     {
       screenDisplay = 2;
     }
-    if (int(data[0]) == 238)
+    if (int(data[0]) == 238) //0xEE = Training
     {
       screenDisplay = 3;
     }
-    if (int(data[0]) == 255)
+    if (int(data[0]) == 255) //0xFF = Game
     {
       screenDisplay = 4;
     }
   } 
-  else
+  else // If the byte received is different to 0xBB, 0xCC, 0xDD, 0xEE, or 0xFF, the byte
+       // contains information about the power level of each player
   {   
     powerBoth = data[0];
     stringPower = binary(powerBoth);
-
+    // The low nibble is the power for Player 1 form 0 to 10
     p1DataIn = 10*(int(unbinary(stringPower.substring(0, 4))));
+    // The high nibble is the power for Player 2 form 0 to 10
     p2DataIn = 10*(int(unbinary(stringPower.substring(4, 8))));
     println(p1DataIn);
     println(p2DataIn);
@@ -224,84 +233,14 @@ void onBluetoothDataEvent(String who, byte[] data) {
 }
 
 void players() {
-  //if the server is available
-  //if (myClient.available() > 0 ) {
-  if (true) {
-    //read data 4 times for P1
-    //    p1DataIn = myClient.read();
-    //    println(p1DataIn);
-    //    p1DataIn = myClient.read();
-    //    println(p1DataIn);
-    //    p1DataIn = myClient.read();
-    //    println(p1DataIn);
-    //    p1DataIn = myClient.read();
-    //    println(p1DataIn);
-    //    p1DataIn = 80;
-
-    //P2's turn to get read data 4 times
-    //    p2DataIn = myClient.read();
-    //    println(p2DataIn);
-    //    p2DataIn = myClient.read();
-    //    println(p2DataIn);
-    //    p2DataIn = myClient.read();
-    //    println(p2DataIn);
-    //    p2DataIn = myClient.read();
-    //    println(p2DataIn);
-    //    p2DataIn = 50;
-  } 
-  else {
-    //if nothing is found, return whatever previous result has been found
-    //and if nothing is ever found then the result will remain as 0.
-    p1Result = prevResult1;
-    p2Result = prevResult2;
-  }
-
-  //P1 CALCULATIONS AND REFRESH STUFF   
-  //convert the found data into a float  
-  float(p1DataIn);
-
-  if (float(p1DataIn) < maxValue) //if the data found is lower than the max possible value
-  {
-    //calculate the result as : input data/ maximum possible data
-    p1Result = float(p1DataIn)/maxValue;
-  } 
-  else
-  {
-    //if it's equal or larger than the max value, return Result as 1.
-    p1Result = 1;
-  }
-
-  //update the player UI; return the result of input data/max data
+// calculate the result as : input data/ maximum possible data (it will take values between 0 and 1)
+  p1Result = float(p1DataIn)/maxValue;
+  p2Result = float(p2DataIn)/maxValue;
+// update the player UI; return the result of input data/max data
   player1.updateFloat(p1Result);
-
-  //if sending int between 1 and 100
-  //player1.updateInt(p1Result);
-
-  //display the updated UI
-  player1.display();
-
-  //the current result will be the Previous Result next time this program loops.
-  prevResult1 = p1Result;
-
-  //P2 STUFF
-  // exactly the same as P1's UI refreshing/calculating operations.
-  float(p2DataIn);
-  if (float(p2DataIn) < maxValue) {
-    p2Result = float(p2DataIn)/maxValue;
-  } 
-  else {
-    p2Result = 1;
-  }
-
-
   player2.updateFloat(p2Result);
-  //if sending int between 1 and 100
-  //player2.updateInt(p2Result);
-
+// display the updated UI
+  player1.display(); 
   player2.display();
-
-  prevResult2 = p2Result;
-
-  //println(p1DataIn, p2DataIn);
 }
 

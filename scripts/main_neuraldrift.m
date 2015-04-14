@@ -19,7 +19,13 @@ bolTablet = true;
 
 % Bluetooth configuration for Smartphone or Table running the Android App
 btDevice = 'MuSAE N7';
+%btDevice = 'youppiPhone';
+%btDevice = 'GT-I9100M';
+
 btChannel = 3;
+%btChannel = 6;
+%btChannel = 4;
+
 % If you do not know the bluetooth channel number, uncomment the next line:
 %btChannel = 0
 % Matlab will search for the correct channel, however the connection will 
@@ -76,6 +82,30 @@ disp('');
 % Creation of a Figure to detect pressesed keys
 h = figure();
 set(h,'currentch',char(0));
+
+% Detects when the user press 's' in the figure to start
+while true
+    delay_ms(100);
+    drawnow; %Need to update CurrentCharacter property
+    commandKey = get(h,'CurrentCharacter');
+    set(h,'currentch',char(0));
+    if isempty(commandKey)
+    else
+        isempty(commandKey)
+        if strcmp(commandKey,'s')
+            break
+        end
+    end
+end
+fprintf('\b');
+
+fprintf('\b');
+
+
+
+
+   
+
 
 % Audio cue, Beep
 audiofilename = 'beep.mp3';
