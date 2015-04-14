@@ -32,7 +32,7 @@ TODO
 
 ## License
 
-neuralDrift is licensed under the MIT License (see LICENSE.txt).
+neuralDrift is licensed under the [MIT License](LICENSE.txt).
 
 ## About us
 
