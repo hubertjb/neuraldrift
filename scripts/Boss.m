@@ -12,14 +12,20 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Enables of Disables EV3 Robot, Bluetooth
-bolRobot = true;
+bolRobot = false;
 
 % % Enables of Disables Android App, Bluetooth
 bolTablet = true;
 
 % Bluetooth configuration for Smartphone or Table running the Android App
 btDevice = 'MuSAE N7';
+%btDevice = 'youppiPhone';
+%btDevice = 'GT-I9100M';
+
 btChannel = 3;
+%btChannel = 6;
+%btChannel = 4;
+
 % If you do not know the bluetooth channel number, uncomment the next line:
 %btChannel = 0
 % Matlab will search for the correct channel, however the connection will 
