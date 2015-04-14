@@ -202,7 +202,7 @@ featArray(9*nbCh+1:10*nbCh) = (meanLowAlpha+meanLowBeta)./meanTheta;
 % featArray(10) = (featArray(3)+featArray(4))./featArray(2);
 
 % Log-transform the band power features
-featArray(1:10) = log10(featArray(1:10));
+featArray = log10(featArray);
 
 % % Standard deviation features
 % featArray(11) = mean(stdDelta);

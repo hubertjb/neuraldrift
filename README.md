@@ -10,14 +10,14 @@ the game lets two players – Jaeger pilots – control a robot by syncing their
 The project was completed under 36 hours during [WearHacks 2014](http://www.wearhacks.com/),
 the first wearables hackathon to be held in North America. 
 
-The game consists in a LEGO&copy; MINDSTORMS&copy; EV3 robot, and Android device displaying the game state, and requires two EEG devices supported by [MuLES](https://github.com/MuSAELab/MuLES).
+The game consists in a LEGO&copy; MINDSTORMS&copy; EV3 robot, an Android device displaying the game state, and requires two EEG devices supported by [MuLES](https://github.com/MuSAELab/MuLES).
 
 
 ## Installation
 
 ### 1. Download project
 
-You can either download the zip file of the project and extract, or clone the git.
+You can either download the zip file of the project and extract it, or clone the git.
 
 ### 2. Download and install dependencies:
 
@@ -50,4 +50,4 @@ neuralDrift is licensed under the [MIT License](LICENSE.txt).
 
 ## About us
 
-[Team members](http://neuraldrift.net/?page_id=12)
+[Team members](http://neuraldrift.net/?page_id=12).
