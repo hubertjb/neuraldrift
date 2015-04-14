@@ -105,8 +105,7 @@ while true % Player Loop
             flushMules();
             pause(trainDuration*1.2);
             eegData = getDataMules();
-            train0 = eegData(1:nSamplesTrain,:);
-            train0 = flipud(train0);
+            train0 = eegData(size(eegData,1)-nSamplesTrain+1 : end,:); 
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'B', %Training data Class 1
@@ -114,8 +113,7 @@ while true % Player Loop
             flushMules();
             pause(trainDuration*1.2);
             eegData = getDataMules();
-            train1 = eegData(1:nSamplesTrain,:);
-            train1 = flipud(train1);
+            train1 = eegData(size(eegData,1)-nSamplesTrain+1 : end,:); 
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'C', %Training classifier
@@ -137,10 +135,9 @@ while true % Player Loop
                     evalTic = tic;
                     limit = testOverlap;
                     eegData = getDataMules();
-                    evalData = [eegData; evalData];
-                    evalData = evalData(1:2*nSamplesWindow,:);
-                    evalDataInv = flipud(evalData);
-                    yHat = evaluateExample(evalDataInv(:,electArray), Fs, model, ...
+                    evalData = [evalData,eegData];
+                    evalData = evalData(size(evalData,1)-nSamplesWindow+1:end,:);
+                    yHat = evaluateExample(evalData(:,electArray), Fs, model, ...
                                            mu_col, sigma_col, selectedFeatInd, classifierType); % Classify the example
                     fwrite(playerClient, yHat);
                 end
