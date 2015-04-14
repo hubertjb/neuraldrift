@@ -115,7 +115,7 @@ while true % Player Loop
             pause(trainDuration*1.2);
             eegData = getDataMules();
             train1 = eegData(1:nSamplesTrain,:);
-            train0 = flipud(train1);
+            train1 = flipud(train1);
             sound(y,sampF); %beep
             fwrite(playerClient, 1); % Notify Boss
         case 'C', %Training classifier
