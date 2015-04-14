@@ -1,4 +1,4 @@
-function Boss()
+function main_neuraldrift()
 
 % Description of Boss Script
 
@@ -12,7 +12,7 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Enables of Disables EV3 Robot, Bluetooth
-bolRobot = true;
+bolRobot = false;
 
 % % Enables of Disables Android App, Bluetooth
 bolTablet = true;
@@ -29,13 +29,9 @@ btChannel = 3;
 %%%%%%%%   === Player Information ===                  %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Name of Players 
-player1Name = 'Ana';
-player2Name = 'Wil';
-
-% TCP/IP ports for communication with respective PlayerFunct.m instances 
-player1Port = 33001;
-player2Port = 33002;
+% Name of Players
+player1Name = 'Raleigh';
+player2Name = 'Mako';
 
 % Verify names
 if isempty(player1Name) || isempty(player2Name)
@@ -51,8 +47,8 @@ end
 %%%%%%%% === Configuration of Game Mechanics ===       %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Game Mechanics
-trainDuration  = 40;  % Duration of each training section
+% Feature extraction and classifier training parameters
+trainDuration  = 20;  % Duration of each training phase
 windowDuration = 2;   % Duration of the test window to extract features
 testOverlap    = 1;   % Overlap for the windows
 
@@ -117,8 +113,8 @@ if bolTablet
     tabletServer = Bluetooth(btDevice,btChannel);
     fopen(tabletServer);
     disp('Bluetooth connection opened sucessfully!');
-    disp('Touch the tablet screen to start');
-    input('Press Enter to Continue')
+    disp(' ');
+    input('Touch the tablet screen, then press <Enter> to continue...')
     %Receiving a string from the Tablet, the string is ended ('\r')
     index=1;
     while true
@@ -539,4 +535,4 @@ disp('Bye !')
             end
     end
 
-end % Boss Function
+end % Main Function

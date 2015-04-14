@@ -8,27 +8,41 @@ Inspired by the movie [Pacific Rim](http://en.wikipedia.org/wiki/Pacific_Rim_%28
 in which collaborative mind control technology allows the use of futuristic giant robots,
 the game lets two players – Jaeger pilots – control a robot by syncing their brain waves.
 The project was completed under 36 hours during [WearHacks 2014](http://www.wearhacks.com/),
-the first wearable hackathon to be held in North America. 
+the first wearables hackathon to be held in North America. 
 
-Today’s neurotechnology, such as portable neuroimaging devices, can tell us how our own brain
-reacts and behaves in everyday situations. These novel devices, though, are the source of 
-many unrealistic expectations and, at the same time, of unfounded concerns.
-NeuralDrift is an attempt to bridge that gap, by offering a fun and interactive way
-for people to discover what they can and cannot do with neurotechnology, 
-through a tangible and engaging neurocomputing experience.
+The game consists in a LEGO&copy; MINDSTORMS&copy; EV3 robot, and Android device displaying the game state, and requires two EEG devices supported by [MuLES](https://github.com/MuSAELab/MuLES).
 
 
 ## Installation
 
-Dependencies:
-- MATLAB (which version?) with the Instrument Control Toolbox
-- [MuLES](https://github.com/MuSAELab/MuLES)
-- [QUT EV3 MATLAB toolkit](https://code.google.com/p/matlab-toolboxes-robotics-vision/source/browse/#svn%2Fmatlab%2Frobot%2Ftrunk)
+### 1. Download project
 
+You can either download the zip file of the project and extract, or clone the git.
+
+### 2. Download and install dependencies:
+
+- MATLAB (tested with R2013a) with the Instrument Control Toolbox
+- [MuLES](https://github.com/MuSAELab/MuLES)
+	* Put the folder **EV3** in **/neuralDrift/scripts**.
+	* Follow the installation instructions for configuring specific EEG devices (i.e., installing SDKs and pairing devices with Bluetooth).
+- [QUT EV3 MATLAB toolkit](https://code.google.com/p/matlab-toolboxes-robotics-vision/source/browse/#svn%2Fmatlab%2Frobot%2Ftrunk)
+	* Put the folder **EV3** in **/neuralDrift/scripts**.
+- Compile Processing code/Install executable on Android device
+	* TODO!
 
 ## Usage
 
-TODO
+1. Launch the **neuralDrift** Android app on your Android device.
+2. Power on the EEG devices and set them on the 2 players.
+3. Open the **main_neuraldrift.m** script and change default parameters if needed (Android device name, player names, feature extraction parameters, MATLAB path, etc.)
+4. Make sure MATLAB's current folder is **neuraldrift/scripts**, then launch **main_neuraldrift()**.
+5. Follow the training procedure and start drifting!
+6. Various commands (make sure to be focused on Figure 1 before using the commands):
+	* Turn robot motors ON/OFF: <SPACE>
+	* Restart game: <r>
+	* Escape game: <Esc>
+	* Print information system state: <n>
+
 
 ## License
 

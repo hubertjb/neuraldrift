@@ -1,12 +1,12 @@
 function [featArray, featNames] = featureExtract(rawData, Fs, varargin)
-%% Extract the features from the EEG. Takes 0.003 seconds to execute on 2-second windows on my machine (i7, 8gb)
+%% Extract the features from the EEG.
 % 
 % Feature list:
 % - Log-band powers
 % - Log-ratios of band powers
-% - Std of band powers
-% - Std of ratios of band power
 % - [IMPLEMENTED BUT NOT USED FOR THE MOMENT]:
+%   . Std of band powers
+%   . Std of ratios of band power
 %   . Temporal statistics (mean and std)
 %   . Autoregressive model coefficients
 %   . Entropy
@@ -14,10 +14,11 @@ function [featArray, featNames] = featureExtract(rawData, Fs, varargin)
 % Inputs:
 %   rawData: array of dimension [number of samples, number of channels]
 %   Fs: sampling frequency of the raw data
+%   [Optional] chNames: (cell) electrode names
 %   [Optional] currentClass: (int) class of raw data
 %   [Optional] plotY: (bool) if true, plot the PSD of the preprocessed data
 % Outputs:
-%   featArray: array of dimension [number of features points, number of different features]
+%   featArray: array of dimension [1, number of different features]
 %   featNames: cell array containing the names of all the computed features
 
 % TODO:
@@ -27,12 +28,18 @@ function [featArray, featNames] = featureExtract(rawData, Fs, varargin)
 nVarargs = length(varargin);
 switch nVarargs
     case 1
-        currentClass = varargin{1};
+        chNames = varargin{1};
         plotY = false;
     case 2
-        currentClass = varargin{1};
-        plotY = varargin{2};
+        chNames = varargin{1};
+        currentClass = varargin{2};
+        plotY = false;
+    case 3
+        chNames = varargin{1};
+        currentClass = varargin{2};
+        plotY = varargin{3};
     otherwise
+        chNames = {};
         currentClass = NaN;
         plotY = false;
 end
@@ -105,12 +112,34 @@ end
 
 %% 4. Compute the features
 
-if nbCh == 1 % Neurosky
-    alphaCh = 1;
-    betaCh = 1;
-else % Muse, Enobio, Emotiv
-    alphaCh = [1,4];
-    betaCh = [2,3];
+% If no channel names were provided, make fake ones
+if isempty(chNames)
+    chNames = cell(nbCh,1);
+    for i = 1:nbCh
+        chNames{i} = ['ch',num2str(i)];
+    end
+end
+
+% Define features to extract
+featTypes = {'pwr-delta', ...
+             'pwr-theta', ...
+             'pwr-low-alpha', ...
+             'pwr-high-alpha', ...
+             'pwr-low-beta', ...
+             'pwr-high-beta', ...
+             ...
+             'pwr-delta/beta', ...
+             'pwr-theta/beta', ...
+             'pwr-alpha/beta', ...
+             'pwr-alpha/theta'};
+         
+nbFeatTypes = length(featTypes);
+
+featNames = cell(nbFeatTypes*nbCh,1);
+for i = 1:nbFeatTypes
+    for j = 1:nbCh
+        featNames{j+(i-1)*nbCh} = [featTypes{i},'-',chNames{j}];
+    end
 end
 
 % SPECTRAL FEATURES
@@ -118,79 +147,75 @@ end
 % Delta <4
 ind_delta = (f<4);
 meanDelta = mean(absY(ind_delta,:));
-stdDelta = std(absY(ind_delta,:),0,1);
+% stdDelta = std(absY(ind_delta,:),0,1);
+
 % Theta 4-8
 ind_theta = (f>=4 & f<=8);
 meanTheta = mean(absY(ind_theta,:));
-stdTheta = std(absY(ind_theta,:),0,1);
+% stdTheta = std(absY(ind_theta,:),0,1);
+
 % Low alpha 8-10
 ind_low_alpha = (f>=8 & f<=10);
-meanLowAlpha = mean(absY(ind_low_alpha,alphaCh));
-stdLowAlpha = std(absY(ind_low_alpha,alphaCh),0,1);
+meanLowAlpha = mean(absY(ind_low_alpha,:));
+% stdLowAlpha = std(absY(ind_low_alpha,alphaCh),0,1);
+
 % High alpha 10-12
 ind_high_alpha = (f>=10 & f<=12);
-meanHighAlpha = mean(absY(ind_high_alpha,alphaCh));
-stdHighAlpha = std(absY(ind_high_alpha,alphaCh),0,1);
+meanHighAlpha = mean(absY(ind_high_alpha,:));
+% stdHighAlpha = std(absY(ind_high_alpha,alphaCh),0,1);
+
 % Low beta 12-18
 ind_low_beta = (f>=12 & f<=18);
-meanLowBeta = mean(absY(ind_low_beta,betaCh));
-stdLowBeta = std(absY(ind_low_beta,betaCh),0,1);
+meanLowBeta = mean(absY(ind_low_beta,:));
+% stdLowBeta = std(absY(ind_low_beta,betaCh),0,1);
+
 % High beta 18-20
 ind_high_beta = (f>=18 & f<=30);
-meanHighBeta = mean(absY(ind_high_beta,betaCh));
-stdHighBeta = std(absY(ind_high_beta,betaCh),0,1);
+meanHighBeta = mean(absY(ind_high_beta,:));
+% stdHighBeta = std(absY(ind_high_beta,betaCh),0,1);
 
 % Fill the array of features
-featArray(1) = mean(meanDelta);
-featArray(2) = mean(meanTheta);
-featArray(3) = mean(meanLowAlpha);
-featArray(4) = mean(meanHighAlpha);
-featArray(5) = mean(meanLowBeta);
-featArray(6) = mean(meanHighBeta);
+featArray = zeros(1,nbCh*nbFeatTypes);
+featArray(1:nbCh) = meanDelta;
+featArray(nbCh+1:2*nbCh) = meanTheta;
+featArray(2*nbCh+1:3*nbCh) = meanLowAlpha;
+featArray(3*nbCh+1:4*nbCh) = meanHighAlpha;
+featArray(4*nbCh+1:5*nbCh) = meanLowBeta;
+featArray(5*nbCh+1:6*nbCh) = meanHighBeta;
 
-featArray(7) = featArray(1)./(featArray(5)+featArray(6));
-featArray(8) = featArray(2)./(featArray(5)+featArray(6));
-featArray(9) = (featArray(3)+featArray(4))./(featArray(5)+featArray(6));
-featArray(10) = (featArray(3)+featArray(4))./featArray(2);
+featArray(6*nbCh+1:7*nbCh) = meanDelta./(meanLowBeta+meanHighBeta);
+featArray(7*nbCh+1:8*nbCh) = meanTheta./(meanLowBeta+meanHighBeta);
+featArray(8*nbCh+1:9*nbCh) = (meanLowAlpha+meanLowBeta)./(meanLowBeta+meanHighBeta);
+featArray(9*nbCh+1:10*nbCh) = (meanLowAlpha+meanLowBeta)./meanTheta;
+
+% % Fill the array of features
+% featArray(1) = mean(meanDelta);
+% featArray(2) = mean(meanTheta);
+% featArray(3) = mean(meanLowAlpha);
+% featArray(4) = mean(meanHighAlpha);
+% featArray(5) = mean(meanLowBeta);
+% featArray(6) = mean(meanHighBeta);
+% 
+% featArray(7) = featArray(1)./(featArray(5)+featArray(6));
+% featArray(8) = featArray(2)./(featArray(5)+featArray(6));
+% featArray(9) = (featArray(3)+featArray(4))./(featArray(5)+featArray(6));
+% featArray(10) = (featArray(3)+featArray(4))./featArray(2);
 
 % Log-transform the band power features
 featArray(1:10) = log10(featArray(1:10));
 
-featArray(11) = mean(stdDelta);
-featArray(12) = mean(stdTheta);
-featArray(13) = mean(stdLowAlpha);
-featArray(14) = mean(stdHighAlpha);
-featArray(15) = mean(stdLowBeta);
-featArray(16) = mean(stdHighBeta);
-
-featArray(17) = featArray(11)./(featArray(15)+featArray(16));
-featArray(18) = featArray(12)./(featArray(15)+featArray(16));
-featArray(19) = (featArray(13)+featArray(14))./(featArray(15)+featArray(16));
-featArray(20) = (featArray(13)+featArray(14))./featArray(12);
-
-featNames = {'delta', ...
-             'theta', ...
-             'low_alpha_temp', ...
-             'high_alpha_temp', ...
-             'low_beta_front', ...
-             'high_beta_front', ...
-             ...
-             'delta/beta', ...
-             'theta/beta', ...
-             'alpha/beta', ...
-             'alpha/theta', ...
-             ...
-             'std_delta', ...
-             'std_theta', ...
-             'std_low_alpha_temp', ...
-             'std_high_alpha_temp', ...
-             'std_low_beta_front', ...
-             'std_high_beta_front', ...
-             ...
-             'std_delta_beta', ...
-             'std_theta/beta', ...
-             'std_alpha/beta', ...
-             'std_alpha/theta'};
+% % Standard deviation features
+% featArray(11) = mean(stdDelta);
+% featArray(12) = mean(stdTheta);
+% featArray(13) = mean(stdLowAlpha);
+% featArray(14) = mean(stdHighAlpha);
+% featArray(15) = mean(stdLowBeta);
+% featArray(16) = mean(stdHighBeta);
+% 
+% featArray(17) = featArray(11)./(featArray(15)+featArray(16));
+% featArray(18) = featArray(12)./(featArray(15)+featArray(16));
+% featArray(19) = (featArray(13)+featArray(14))./(featArray(15)+featArray(16));
+% featArray(20) = (featArray(13)+featArray(14))./featArray(12);
 
 currFeatInd = length(featArray)+1;
 

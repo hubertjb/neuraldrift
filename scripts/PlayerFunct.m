@@ -1,5 +1,4 @@
-function PlayerFunct(port2boss, port2acq, playerName, trainDuration, windowDuration, testOverlap)
-% Description of Boss Script
+function PlayerFunct(port2main, port2acq, playerName, trainDuration, windowDuration, testOverlap)
 
 % Adds the parent directory to the Matlab Path
 folder = [pwd '\'];
@@ -8,9 +7,9 @@ addpath(genpath(pwd));
 cd(folder);
 
 % Find the player number
-if port2boss == 33001
+if port2main == 33001
     playerNb = 1;
-elseif port2boss == 33002
+elseif port2main == 33002
     playerNb = 2;
 else
     disp('Player number could not be identified.');
@@ -21,13 +20,13 @@ disp(['Player ',num2str(playerNb)]);
 disp(playerName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%              Connection with Boss             %%%%%%%%
+%%%%%%%%              Connection with main             %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-disp('Trying to connect to Boss...')
-playerClient = tcpip('0.0.0.0', port2boss, 'NetworkRole', 'client');
+disp('Trying to connect to main...')
+playerClient = tcpip('0.0.0.0', port2main, 'NetworkRole', 'client');
 playerClient.Timeout = 60; %in seconds
 fopen(playerClient);
-disp('Connected to Boss !')
+disp('Connected to main !')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%              Connection with MuLES            %%%%%%%%
@@ -55,8 +54,8 @@ audiofilename = 'beep.mp3';
 [y, sampF] = audioread(audiofilename);
 sound(y,sampF);
 
-% Notify Boss
-fwrite(playerClient, 1); % Notify Boss
+% Notify main
+fwrite(playerClient, 1); % Notify main
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%              Obtain EEG device info           %%%%%%%%
@@ -108,7 +107,7 @@ while true % Player Loop
             train0 = eegData(1:nSamplesTrain,:);
             train0 = flipud(train0);
             sound(y,sampF); %beep
-            fwrite(playerClient, 1); % Notify Boss
+            fwrite(playerClient, 1); % Notify main
         case 'B', %Training data Class 1
             disp('Handshake Phase 2...');
             flushMules();
@@ -117,16 +116,17 @@ while true % Player Loop
             train1 = eegData(1:nSamplesTrain,:);
             train1 = flipud(train1);
             sound(y,sampF); %beep
-            fwrite(playerClient, 1); % Notify Boss
+            fwrite(playerClient, 1); % Notify main
         case 'C', %Training classifier
             classifierType = 'SVM';
             % Select electrodes using electArray variable
             [model, mu_col, sigma_col, selectedFeatInd] = learnModel(train0(:,electArray), train1(:,electArray), ...
-                                                                          nSamplesWindow, nSamplesOverlap, Fs, classifierType);
+                                                                          nSamplesWindow, nSamplesOverlap, Fs, ...
+                                                                          classifierType, playerName);
             sound(y,sampF); %beep
             delay_ms(200);
             sound(y,sampF); %beep
-            fwrite(playerClient, 1); % Notify Boss
+            fwrite(playerClient, 1); % Notify main
         case 'D', %Evaluate
             evalTic = tic;
             limit = windowDuration;
@@ -145,7 +145,7 @@ while true % Player Loop
                     fwrite(playerClient, yHat);
                 end
                            
-                % Check if the Boss requested to Stop
+                % Check if the main requested to Stop
                 if playerClient.BytesAvailable > 0 % If available bytes
                     commandBoss = fread(playerClient, 1);
                     if(commandBoss == 'Q') %If Q command
@@ -224,231 +224,3 @@ disp(['Done with Player ',num2str(playerNb)]);
     end
 
 end % END of PlayerFunct
-
-
-% %Buffer definition, it will depend of Fs and #CHANNELS
-% bufferSeconds = trainDuration;
-% nSamples = bufferSeconds*Fs;
-% nColumns = numel(tags);
-% trainEEG = NaN(nSamples,nColumns);
-% timeVector = (0:nSamples-1)/Fs;
-% 
-% %Window length were power is computed (in samples)
-% windowLength = Fs*windowDuration;
-% overlapLength = testOverlap; %seconds
-% overlapSampleLength = floor(overlapLength*Fs);
-% 
-% %Test buffer
-% testEEG = NaN(windowLength,nColumns);
-
-% 
-% yHatHist = [40];
-% Xtest = [];
-
-
-
-% State machine label
-% state = 'NA';
-
-
-
-% FullTestSave = ones(length(electArray),1)';
-% FullYEval = 1;
-% FullYHat = 1;
-%     
-%     switch state
-%         case 'trainClassifier',
-%             
-%             disp('Training classifier');
-%             
-%             %Extract features for class 0
-%             electUsed = double(train0(:,electArray));
-%             
-%             L = length(electUsed);
-%             nbWin = floor(L/(windowLength - overlapSampleLength))-2;
-% 
-%             for i = 0:nbWin-1
-%                 % Get the window
-%                 start = (windowLength - overlapSampleLength)*i + 1;
-%                 finish = start + windowLength - 1;
-%                 dataWin = electUsed(start:finish,:);
-%                 
-%                 if i == 0
-%                     nFeatures = length(dataWin);
-%                     featArray0 = zeros(nbWin,nFeatures);
-%                 end
-% 
-%                 [featArray0(i+1,:), ~] = featureExtract(dataWin, Fs, 0);
-%             end
-% 
-%             % Extract features for class 1
-%             electUsed = double(train1(:,electArray));
-%             
-%             L = length(electUsed);
-%             nbWin = floor(L/(windowLength - overlapSampleLength))-2;
-%             for i = 0:nbWin-1
-%                 % Get the window
-%                 start = (windowLength - overlapSampleLength)*i + 1;
-%                 finish = start + windowLength - 1;
-%                 dataWin = electUsed(start:finish,:);
-%                 
-%                 if i == 0
-%                     nFeatures = length(dataWin);
-%                     featArray1 = zeros(nbWin,nFeatures);
-%                 end
-% 
-%                 [featArray1(i+1,:), featNames] = featureExtract(dataWin, Fs, 1);
-%             end
-%             
-%             % Remove start and end of featArray
-%             featArray0 = featArray0(2:end-2,:);
-%             featArray1 = featArray1(2:end-2,:);
-%             
-%             % Z-score normalize the features
-%             featArrayAll = [featArray0; featArray1];
-%             mu_col = nanmean(featArrayAll);
-%             sigma_col = nanstd(featArrayAll);
-%             featArray0 = (featArray0-repmat(mu_col,nbWin,1))./repmat(sigma_col,nbWin,1);
-%             featArray1 = (featArray1-repmat(mu_col,nbWin,1))./repmat(sigma_col,nbWin,1);
-%             
-%             % Select the best features
-%             nSelectedFeat = 5;
-%             selectedFeatInd = featureSelect(featArrayAll(:,1:end-1), featArrayAll(:,end), nSelectedFeat);
-%             disp('Selected features: ')
-%             disp(featNames(selectedFeatInd))
-%             
-%             % Remove outliers from selected features
-%             [outInd0] = findOutliers(featArray0(:,selectedFeatInd));
-%             [outInd1] = findOutliers(featArray1(:,selectedFeatInd));
-%             featArray0(outInd0,:) = [];
-%             featArray1(outInd1,:) = [];
-%                         
-%             % Train the classifier
-%             classifierName = 'SVM';
-%             [modelParams, trainingAcc] = trainClassifier(featArray0(:,selectedFeatInd), featArray1(:,selectedFeatInd), classifierName);
-%             
-%             % Save the raw data, the features, the normalized features, the
-%             % feature list, the selected features list, the classifier
-%             % parameters, and the training accuracy
-%             saveName = ['calibration_player_', playerName, num2str(playerNb),'_',num2str(now), '_', num2str(nRun), '.mat'];
-%             calibData.port2boss = port2boss;
-%             calibData.port2acq = port2acq;
-%             calibData.playerNb = playerNb;
-%             calibData.raw = electUsed;
-%             calibData.Fs = Fs;
-%             calibData.device = device;
-%             calibData.chLabels = chLabels;
-%             calibData.featArray = featArrayAll;
-%             calibData.featArrayNorm = [featArray0; featArray1];
-%             calibData.featNames = featNames;
-%             calibData.selectedFeatInd = selectedFeatInd;
-%             calibData.selectedFeat = featNames(selectedFeatInd);
-%             calibData.modelParams = modelParams;
-%             calibData.trainingAcc = trainingAcc;
-%             calibData.train0 = train0;
-%             calibData.train1 = train1;
-%             try
-%                 save(saveName, 'calibData');
-%                 disp(['Calibration data saved in ',saveName,'.'])
-%             catch
-%                 disp('Could not save the calibration data.')
-%             end
-%             
-%             % Plot the main results
-% %             scrsz = get(groot,'ScreenSize');
-% %             figure('Position',[scrsz(3)/8 scrsz(4)/4 6*scrsz(3)/8 2*scrsz(4)/4])
-% %             
-%             figure('units','normalized','outerposition',[0 0 1 1])        
-%             subplot(3,1,1);
-%                 plot([train0, train1]')
-%                 xlabel('Time points')
-%                 ylabel('Raw EEG amplitude')
-%                 legend(electNames);
-%                 title(strcat('Calibration session for Player', num2str(playerNb)));
-%                 
-%             subplot(3,1,2);
-%                 plot([featArray0(:,selectedFeatInd); featArray1(:,selectedFeatInd)])
-%                 xlabel('Time points')
-%                 ylabel('Normalized feature amplitude')
-%                 legend(featNames{selectedFeatInd});
-%                 title([num2str(nSelectedFeat),' best features over time'])
-%                 
-%             subplot(3,1,3);
-%                 boxplot([featArray0, featArray1], 'labels', [featNames, featNames],...
-%                         'labelorientation','inline');
-%                 ylabel('Normalized feature amplitude')
-%                 title('Distribution of features for the two classes')
-%                 
-%             drawnow
-%             pause(1);
-%             
-%             testEEG(:) = NaN;
-%             %state = 'startClassification';
-%             sound(y,sampF); sound(y,sampF); %beep
-%             
-%             disp('Training Done !');
-%             %Don't tell Boss now, wait after Training. (since not long)
-%             fwrite(playerClient, 1);
-%             needWaitHandshake = 1;
-%             
-%         case 'classification'
-%             if ~isnan(testEEG(1,1))
-%                 electUsed = double(testEEG(:,electArray));
-%                 FullTestSave = [FullTestSave; electUsed];
-%                 example = featureExtract(electUsed, Fs);
-%                 example = (example-mu_col)./sigma_col;
-%                 
-%                 yEval = modelPredict(modelParams, example(selectedFeatInd), classifierName);
-%                 yHat = yEval;
-%                 
-%                 %[~,yHat] = max(yEval,[],2);
-%                 yHatHist = [yHatHist; yHat];
-%                 fwrite(playerClient, yHat);
-%          
-%                 testEEG(1:windowLength-overlapSampleLength,:) = NaN;
-%                 %Only the shift is cleaned.
-%                 %note that if overlap = 0, then all the matrix is set to
-%                 %NaN
-%                 
-%                 if playerClient.BytesAvailable > 0
-%                     playerData = fread(playerClient, 1);
-%                     if(playerData == 'Q')
-%                         break;
-%                     elseif(playerData == 'R')
-%                         needWaitHandshake = 1;
-%                         trainEEG(:) = NaN;
-%                         testEEG(:) = NaN;
-%                         nRun = nRun+1;
-%                         
-%                     end
-%                 end
-%             end
-%     end
-%     
-%     delay_ms(200);
-% end %while true
-% 
-% saveName = ['test_player_', playerName, num2str(playerNb),'_',num2str(now), '_', num2str(nRun), '.mat'];
-% testData.port2boss = port2boss;
-% testData.port2acq = port2acq;
-% testData.playerNb = playerNb;
-% testData.raw = electUsed;
-% testData.Fs = Fs;
-% testData.device = device;
-% testData.chLabels = chLabels;
-% testData.data = FullTestSave;
-% % testData.Threshold = scoreThreshold;
-% % testData.YHats = FullYHat;
-% % testData.YEvals = FullYEval;
-% 
-% save(saveName, 'testData');
-% disp(['Test data saved in ',saveName,'.'])
-% 
-% subplot(2,1,1);
-% plot(FullTestSave);
-% subplot(2,1,2);
-% plot([FullYEval FullYHat]);
-% bPress = 0;
-% % while bPress == 0
-% %     bPress = waitforbuttonpress;
-% % end

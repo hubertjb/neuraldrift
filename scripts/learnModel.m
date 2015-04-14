@@ -1,5 +1,5 @@
 function [modelParams, mu_col, sigma_col, selectedFeatInd] = learnModel(train0, train1, windowLength, overlapSampleLength, ...
-                                  Fs, classifierType)
+                                  Fs, classifierType, playerName)
 % Using raw data from two classes, perform feature extraction, features 
 % selection, and train a classifier.
 %
@@ -11,6 +11,7 @@ function [modelParams, mu_col, sigma_col, selectedFeatInd] = learnModel(train0, 
 %                    windows
 %   Fs: sampling frequency of the raw data
 %   classifierType: 'SVM' or 'LR'
+%   playerName: (string) Player name
 %
 % Output
 %   modelParams: object containing the parameters of the trained classifier
@@ -36,12 +37,12 @@ for i = 0:nbWin-1
     dataWin = electUsed(start:finish,:);
     
     if i == 0
-        [tmp, ~] = featureExtract(dataWin, Fs, 0);
+        [tmp, ~] = featureExtract(dataWin, Fs);
         nFeatures = length(tmp);
         featArray0 = zeros(nbWin,nFeatures);
     end
     
-    [featArray0(i+1,:), ~] = featureExtract(dataWin, Fs, 0);
+    [featArray0(i+1,:), ~] = featureExtract(dataWin, Fs);
 end
 
 % Extract features for class 1
@@ -56,12 +57,12 @@ for i = 0:nbWin-1
     dataWin = electUsed(start:finish,:);
     
     if i == 0
-        [tmp, ~] = featureExtract(dataWin, Fs, 1);
+        [tmp, ~] = featureExtract(dataWin, Fs);
         nFeatures = length(tmp);
         featArray1 = zeros(nbWin,nFeatures);
     end
     
-    [featArray1(i+1,:), featNames] = featureExtract(dataWin, Fs, 1);
+    [featArray1(i+1,:), featNames] = featureExtract(dataWin, Fs);
 end
 
 
@@ -101,7 +102,7 @@ plot([train0, train1])
 xlabel('Time points')
 ylabel('Raw EEG amplitude')
 %legend(electNames);
-title(['Calibration session (train acc.: ',num2str(trainingAcc),')']);
+title(['Calibration session for ',playerName,' (train acc.: ',num2str(trainingAcc),')']);
 
 subplot(3,1,2);
 plot([featArray0(:,selectedFeatInd); featArray1(:,selectedFeatInd)])
