@@ -135,7 +135,7 @@ while true % Player Loop
                     evalTic = tic;
                     limit = testOverlap;
                     eegData = getDataMules();
-                    evalData = [evalData,eegData];
+                    evalData = [evalData;eegData];
                     evalData = evalData(size(evalData,1)-nSamplesWindow+1:end,:);
                     yHat = evaluateExample(evalData(:,electArray), Fs, model, ...
                                            mu_col, sigma_col, selectedFeatInd, classifierType); % Classify the example
