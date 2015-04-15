@@ -23,9 +23,6 @@ disp('Extracting features...');
 
 %Extract features for class 0
 electUsed = double(train0);
-disp(size(train0))
-disp(size(train1))
-
 
 L = length(electUsed);
 nbWin = floor(L/(windowLength - overlapSampleLength))-2;
@@ -110,11 +107,6 @@ xlabel('Time points')
 ylabel('Normalized feature amplitude')
 legend(featNames{selectedFeatInd});
 title([num2str(nSelectedFeat),' best features over time'])
-
-disp(size(featArray0))
-disp(size(featArray1))
-disp(size(featNames))
-disp(size(featNames))
 
 subplot(3,2,5);
 boxplot(featArray0, 'labels', featNames,'labelorientation','inline');
