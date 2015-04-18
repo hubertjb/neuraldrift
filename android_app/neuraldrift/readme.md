@@ -1,6 +1,6 @@
 # neuralDrift application for android
 
-This guide indicates the steps to setup your system to generate Android apps using processing. While the instructions here assume that that you are working in a PC with Windows (8.1) 64-bit, and an Android device >= 2.3.3 instructions for Mac and Linux users can be found in links of the [Reference](#foo) section of this document. The setup is divided in [PC setup](#pC setup) and [Phone/Table setup](#android device setup).
+This guide indicates the steps to setup your system to generate Android apps using processing. The instructions here assume that you are working in a PC with Windows (8.1) 64-bit, and an Android device >= 2.3.3.  Instructions for Mac and Linux users can be found in links of the [Reference](#reference) section of this document. The setup is divided in [PC setup](#pc-setup) and [Phone/Table setup](#android-device setup).
 
 ## PC setup
 
@@ -31,30 +31,38 @@ http://developer.android.com/sdk/index.html
 8. For Bluetooth connectivity, add the [Ketai Library](https://code.google.com/p/ketai/) to Processing:<br/> Open Processing, go to Sketch > Import Library > Add Library and select Ketai, install it and restart Processing
 
 ##	Android device
-1.	Turn on "USB Debugging" on your device - this process varies by device and which version of the OS you have installed. Try one of the following:
-•	Menu → Applications → Development, then enable USB debugging
-•	On the Nexus tablets, Settings → About tablet, then click on the Build number seven times to activate USB debugging.
-2.	If you are running Windows or Linux, you need to read Google's Using Hardware Devices documentation to install a special USB driver and take care of additional settings.
-3.	Test
+1. Turn on **"USB Debugging"** on your device - this process varies by device and which version of Android you have. Try one of the following methods:
+  *	Menu > Applications > Development, then enable USB debugging
+  * On the Nexus tablets, Settings > About tablet, then click on the Build number seven times to activate USB debugging.
+
+2. If you are running Windows or Linux, you need to read Google's Using Hardware Devices documentation to install a special USB driver and take care of additional settings.
+
+##	Test the Setup
 
 1.	Connect your Android device to the PC
 2.	Create a new sketch in Processing:
-void setup(){
-size(400,400);
-}
+  ``` javascript
+  void setup(){
+  size(400,400);
+  }
 
-void draw(){
-fill(0,255,0);
-rect(mouseX,mousey,50,50);
-}
+  void draw(){
+  fill(0,255,0);
+  rect(mouseX,mousey,50,50);
+  }
+  ```
 
-3.	Click in the Run button in the Processing
-4.	Extra information
+3. Click in the Run button in the Processing
+4. Touch the screen of your Android device
 
-Processing-Android
+## Reference
+
+Processing-Android<br/>
 https://github.com/processing/processing-android/wiki
 
-Android SDK
-http://developer.android.com/sdk/index.html
+Android SDK<br/>
+http://developer.android.com/sdk/index.html </br>
+http://developer.android.com/sdk/installing/index.html?pkg=tools
 
-# This is a <H1> cosa_tag
+Ketai Library<br/>
+https://code.google.com/p/ketai/
