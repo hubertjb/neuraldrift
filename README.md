@@ -22,21 +22,26 @@ You can either download the zip file of the project and extract it, or clone the
 
 - MATLAB (tested with R2013a) with the Instrument Control Toolbox
 - [MuLES](https://github.com/MuSAELab/MuLES)
-	* Put the folder **EV3** in **neuraldrift\scripts**.
 	* Follow the installation instructions for configuring specific EEG devices (i.e., installing SDKs and pairing devices with Bluetooth).
 - [QUT EV3 MATLAB toolkit](https://code.google.com/p/matlab-toolboxes-robotics-vision/source/browse/#svn%2Fmatlab%2Frobot%2Ftrunk)
-	* Put the folder **EV3** in **neuraldrift\scripts**.
-- Compile Processing code/Install executable on Android device
-	* TODO!
+	* Put the folder **EV3** in **neuraldrift\scripts\**.
+- Install the app **neuralDrift** in your Android device provided in **neuraldrift\android_app\**
+	- Enable the option [**Unknown source**](http://www.cnet.com/how-to/how-to-install-apps-outside-of-google-play/) in your device
+	- Copy the apk file onto your device
+	- Use a file manager to locate the apk file and install it
+		- Note. Alternatively, **the neuralDrift** Android app can be compiled using Processing, see **readme.md** in **neuraldrift\android_app\neuralDrift\** for instructions.
+
 
 ## Usage
 
-1. Launch the **neuralDrift** Android app on your Android device.
-2. Power on the EEG devices and set them on the 2 players.
-3. Open the **main_neuraldrift.m** script and change default parameters if needed (Android device name, player names, feature extraction parameters, MATLAB path, etc.)
-4. Make sure MATLAB's current folder is **neuraldrift\scripts**, then launch **main_neuraldrift()**.
-5. Follow the training procedure and start drifting!
-6. Various commands (make sure to be focused on Figure 1 before using the commands):
+1. Pair your Android device with the PC (Only for the first time).
+2. Launch the **neuralDrift** Android app on your Android device.
+3. Power on the EEG devices and set them on the 2 players.
+4. Open the **main_neuraldrift.m** script and change default parameters if needed (Android device name, player names, feature extraction parameters, MATLAB path, etc.)
+5. Make sure MATLAB's current folder is **neuraldrift\scripts**, then launch **main_neuraldrift()**.
+6. Follow the training procedure and start drifting!
+7. Various commands (make sure to be focused on Figure 1 before using the commands):
+	* Start the game <s>
 	* Turn robot motors ON/OFF: <SPACE>
 	* Restart game: <r>
 	* Escape game: <Esc>
