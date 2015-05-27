@@ -10,7 +10,7 @@ clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Enables of Disables EV3 Robot, Bluetooth
-bolRobot = false;
+bolRobot = true;
 
 % % Enables of Disables Android App, Bluetooth
 bolTablet = true;

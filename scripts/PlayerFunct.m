@@ -129,7 +129,7 @@ while true % Player Loop
             evalTic = tic;
             limit = windowDuration;
             while true %Classification Loop
-                delay_ms(50);
+                delay_ms(200);
                 % Get data and classify
                 if toc(evalTic) > limit*1.1
                     evalTic = tic;
