@@ -8,7 +8,7 @@ Inspired by the movie [Pacific Rim](http://en.wikipedia.org/wiki/Pacific_Rim_%28
 in which collaborative mind control technology allows the use of futuristic giant robots,
 the game lets two players – Jaeger pilots – control a robot by syncing their brain waves.
 The project was completed under 36 hours during [WearHacks 2014](http://www.wearhacks.com/),
-the first wearables hackathon to be held in North America. 
+the first wearables hackathon to be held in North America.
 
 The game consists in a LEGO&copy; MINDSTORMS&copy; EV3 robot, an Android device displaying the game state, and requires two EEG devices supported by [MuLES](https://github.com/MuSAELab/MuLES).
 
@@ -24,8 +24,9 @@ You can either download the zip file of the project and extract it, or clone the
 - MATLAB (tested with R2013a) with the Instrument Control Toolbox
 - [MuLES](https://github.com/MuSAELab/MuLES)
 	* Follow the installation instructions for configuring specific EEG devices (i.e., installing SDKs and pairing devices with Bluetooth).
-- [QUT EV3 MATLAB toolkit](https://code.google.com/p/matlab-toolboxes-robotics-vision/source/browse/#svn%2Fmatlab%2Frobot%2Ftrunk)
+- [QUT EV3 MATLAB toolkit](https://wiki.qut.edu.au/download/attachments/172135780/EV3.zip?version=1&modificationDate=1391352088000&api=v2)
 	* Put the folder ```EV3``` in ```/neuralDrift/scripts```.
+	* Pair the LEGO&copy;EV3 robot to the PC. [Instructions](http://cache.lego.com/r/www/r/mindstorms/-/media/franchises/mindstorms%202014/support/bluetooth%20support%20for%20ev3.pdf?l.r2=-716871911)
 - Compile Processing code/Install executable on Android device
 
 ## Usage
