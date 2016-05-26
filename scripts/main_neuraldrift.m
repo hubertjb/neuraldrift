@@ -73,7 +73,7 @@ pathMules = [pwd '\' 'mules'];
 cd(folder);
 
 % Matlab executable path, change if necessary
-matlabExePath = ' "C:\Program Files\MATLAB\R2013a\bin\matlab.exe" ';
+matlabExePath = [' "' matlabroot, '\bin\matlab.exe" '];
 disp('###### Neural Drift #######')
 disp('');
 
